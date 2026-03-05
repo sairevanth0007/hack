@@ -1,113 +1,121 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useDevice } from '../utils/hooks';
 
-const BottomSheet = ({ isOpen, onClose, title, children }) => {
-    const [render, setRender] = useState(isOpen);
+export default function BottomSheet({ isOpen, onClose, title, children }) {
+    const { isDesktop } = useDevice();
 
-    useEffect(() => {
-        if (isOpen) {
-            setRender(true);
-            // Prevent body scroll when open
-            document.body.style.overflow = 'hidden';
-        } else {
-            // Small delay to allow transform animation to finish before unmounting
-            const timer = setTimeout(() => {
-                setRender(false);
-                document.body.style.overflow = 'auto';
-            }, 300);
-            return () => clearTimeout(timer);
-        }
-
-        return () => {
-            document.body.style.overflow = 'auto';
-        };
-    }, [isOpen]);
-
-    if (!render) return null;
+    if (!isOpen) return null;
 
     return (
-        <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 1000,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            pointerEvents: isOpen ? 'auto' : 'none',
-        }}>
+        <>
             {/* Backdrop */}
             <div
                 onClick={onClose}
                 style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.6)',
-                    opacity: isOpen ? 1 : 0,
-                    transition: 'opacity 0.3s ease',
-                    backdropFilter: 'blur(4px)'
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.7)',
+                    zIndex: 200
                 }}
             />
 
-            {/* Sheet */}
-            <div style={{
-                backgroundColor: 'var(--card)',
-                borderTopLeftRadius: '24px',
-                borderTopRightRadius: '24px',
+            {/* Sheet Panel */}
+            <div style={isDesktop ? {
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '100%',
+                maxWidth: '480px',
+                maxHeight: '85vh',
+                background: 'var(--card)',
+                borderRadius: '24px',
                 padding: '24px',
-                paddingBottom: '48px', // Safe area
-                position: 'relative',
-                zIndex: 1001,
-                transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
-                transition: 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                borderTop: '1px solid var(--border)',
-                boxShadow: '0 -10px 40px rgba(0,0,0,0.5)'
+                overflowY: 'auto',
+                zIndex: 201,
+                animation: 'modalIn 0.25s ease forwards',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+            } : {
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                maxHeight: '85vh',
+                background: 'var(--card)',
+                borderRadius: '24px 24px 0 0',
+                padding: '20px',
+                overflowY: 'auto',
+                zIndex: 201,
+                animation: 'slideUp 0.3s ease forwards'
             }}>
-                {/* Handle */}
-                <div style={{
-                    width: '40px',
-                    height: '4px',
-                    backgroundColor: 'var(--muted)',
-                    borderRadius: '4px',
-                    margin: '0 auto 20px',
-                    opacity: 0.5
-                }} />
+                {/* Drag Handle (Mobile only) */}
+                {!isDesktop && (
+                    <div style={{
+                        width: '40px',
+                        height: '4px',
+                        background: 'var(--border)',
+                        borderRadius: '2px',
+                        margin: '0 auto 16px'
+                    }} />
+                )}
 
-                {/* Header */}
+                {/* Top bar */}
                 <div style={{
+                    position: 'relative',
                     display: 'flex',
-                    justifyContent: 'space-between',
+                    justifyContent: 'center',
                     alignItems: 'center',
-                    marginBottom: '20px'
+                    marginBottom: isDesktop ? '24px' : '20px'
                 }}>
-                    <h2 style={{ fontSize: '1.25rem', margin: 0 }}>{title}</h2>
-                    <button onClick={onClose} style={{
-                        color: 'var(--muted)',
-                        padding: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--card2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
+                    {title && (
+                        <h2 style={{
+                            fontFamily: "'Syne', sans-serif",
+                            fontSize: '18px',
+                            fontWeight: 700,
+                            margin: 0
+                        }}>
+                            {title}
+                        </h2>
+                    )}
+
+                    <button
+                        onClick={onClose}
+                        style={{
+                            position: 'absolute',
+                            right: 0,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            background: 'var(--card2)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--text)',
+                            fontSize: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        ✕
                     </button>
                 </div>
 
                 {/* Content */}
-                <div>
-                    {children}
-                </div>
+                {children}
             </div>
-        </div>
-    );
-};
 
-export default BottomSheet;
+            <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        @keyframes modalIn {
+          from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+          to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+      `}</style>
+        </>
+    );
+}

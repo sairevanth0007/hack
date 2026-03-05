@@ -1,115 +1,80 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+
 import PhoneFrame from './components/PhoneFrame';
+import LoadingScreen from './components/LoadingScreen';
+import FloatingAIChat from './components/FloatingAIChat';
+import Sidebar from './components/Sidebar';
+import BottomNav from './components/BottomNav';
+import { useDevice } from './utils/hooks';
+
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
-import Home from './pages/Home';
-import Invest from './pages/Invest';
-import Portfolio from './pages/Portfolio';
-import AIChat from './pages/AIChat';
+import Stages from './pages/Stages';
 import News from './pages/News';
+import Analysis from './pages/Analysis';
 import Profile from './pages/Profile';
-import Streak from './pages/Streak';
-import Points from './pages/Points';
-import Leaderboard from './pages/Leaderboard';
-import { auth } from './utils/auth';
 
-// Simple Route Guard
-const PrivateRoute = ({ children, requireOnboarding = true }) => {
-  const user = auth.getCurrentUser();
-  const location = useLocation();
+import { isLoggedIn } from './utils/auth';
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (requireOnboarding && !user.onboardingComplete) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
-  if (!requireOnboarding && user.onboardingComplete) {
-    // If they are trying to go to onboarding but already completed it
-    if (location.pathname === '/onboarding') {
-      return <Navigate to="/" replace />;
-    }
-  }
-
-  return children;
-};
-
-// Scroll to top on route change
-const ScrollToTop = () => {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    // We scroll the phone frame content area, not window
-    const scrollContainer = document.getElementById('phone-scroll-container');
-    if (scrollContainer) scrollContainer.scrollTop = 0;
-  }, [pathname]);
-  return null;
-};
-
-function App() {
-  return (
-    <BrowserRouter>
-      <PhoneFrame>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/onboarding" element={
-            <PrivateRoute requireOnboarding={false}>
-              <Onboarding />
-            </PrivateRoute>
-          } />
-          <Route path="/" element={
-            <PrivateRoute>
-              <Home />
-            </PrivateRoute>
-          } />
-          <Route path="/invest" element={
-            <PrivateRoute>
-              <Invest />
-            </PrivateRoute>
-          } />
-          <Route path="/portfolio" element={
-            <PrivateRoute>
-              <Portfolio />
-            </PrivateRoute>
-          } />
-          <Route path="/chat" element={
-            <PrivateRoute>
-              <AIChat />
-            </PrivateRoute>
-          } />
-          <Route path="/news" element={
-            <PrivateRoute>
-              <News />
-            </PrivateRoute>
-          } />
-          <Route path="/profile" element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          } />
-          <Route path="/streak" element={
-            <PrivateRoute>
-              <Streak />
-            </PrivateRoute>
-          } />
-          <Route path="/points" element={
-            <PrivateRoute>
-              <Points />
-            </PrivateRoute>
-          } />
-          <Route path="/leaderboard" element={
-            <PrivateRoute>
-              <Leaderboard />
-            </PrivateRoute>
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </PhoneFrame>
-    </BrowserRouter>
-  );
+function PrivateRoute({ children }) {
+    return isLoggedIn() ? children : <Navigate to="/" />;
 }
 
-export default App;
+export default function App() {
+    return (
+        <BrowserRouter>
+            <AppLayout />
+        </BrowserRouter>
+    );
+}
+
+function AppLayout() {
+    const [loading, setLoading] = useState(true);
+    const { isMobile, isTablet, isDesktop } = useDevice();
+    const location = useLocation();
+
+    if (loading) {
+        return <LoadingScreen onComplete={() => setLoading(false)} />;
+    }
+
+    const isAuthRoute = location.pathname === '/' || location.pathname === '/onboarding';
+
+    let marginLeft = '0px';
+    if (!isAuthRoute) {
+        if (isDesktop) marginLeft = '260px';
+        else if (isTablet) marginLeft = '72px';
+    }
+
+    const mainContentStyle = isMobile ? {
+        width: '100%',
+        minHeight: '100vh'
+    } : {
+        marginLeft,
+        padding: '32px 40px',
+        maxWidth: '1280px',
+        minHeight: '100vh',
+        width: `calc(100% - ${marginLeft})`
+    };
+
+    return (
+        <PhoneFrame>
+            {!isAuthRoute && <Sidebar />}
+            <div style={mainContentStyle}>
+                <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/onboarding" element={<Onboarding />} />
+
+                    <Route path="/stages" element={<PrivateRoute><Stages /></PrivateRoute>} />
+                    <Route path="/news" element={<PrivateRoute><News /></PrivateRoute>} />
+                    <Route path="/analysis" element={<PrivateRoute><Analysis /></PrivateRoute>} />
+                    <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+            </div>
+            {!isAuthRoute && <BottomNav />}
+            <FloatingAIChat />
+        </PhoneFrame>
+    );
+}

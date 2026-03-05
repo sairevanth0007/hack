@@ -1,252 +1,301 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../utils/auth';
+import Mascot from '../components/Mascot';
+import { getUser, saveUser, isOnboarded } from '../utils/auth';
+import { useDevice } from '../utils/hooks';
 
-const Login = () => {
-    const navigate = useNavigate();
+export default function Login() {
+    const { isDesktop } = useDevice();
     const [activeTab, setActiveTab] = useState('login');
-    const [showPassword, setShowPassword] = useState(false);
-    const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        age: '',
-        agreed: false
-    });
-    const [error, setError] = useState('');
 
-    const handleChange = (e) => {
-        const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-        setFormData({ ...formData, [e.target.name]: value });
-        setError(''); // Clear error on typing
-    };
+    // Login State
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [loginShowPw, setLoginShowPw] = useState(false);
+    const [loginError, setLoginError] = useState('');
 
-    const validateForm = () => {
-        if (activeTab === 'login') {
-            if (!formData.email || !formData.password) return 'Please fill in all fields';
-            return null;
-        }
+    // Register State
+    const [regFirstName, setRegFirstName] = useState('');
+    const [regLastName, setRegLastName] = useState('');
+    const [regEmail, setRegEmail] = useState('');
+    const [regAge, setRegAge] = useState('');
+    const [regPassword, setRegPassword] = useState('');
+    const [regConfirmPassword, setRegConfirmPassword] = useState('');
+    const [regShowPw, setRegShowPw] = useState(false);
+    const [regAgree, setRegAgree] = useState(false);
+    const [regErrors, setRegErrors] = useState({});
 
-        // Register validation
-        if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.age) {
-            return 'Please fill in all fields';
-        }
-        if (formData.password !== formData.confirmPassword) {
-            return 'Passwords do not match';
-        }
-        if (parseInt(formData.age) < 18) {
-            return 'You must be at least 18 to use Turtrl';
-        }
-        if (!formData.agreed) {
-            return 'You must agree to the Terms & Privacy Policy';
-        }
-        return null;
-    };
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleLoginSubmit = (e) => {
         e.preventDefault();
-        const validationError = validateForm();
-        if (validationError) {
-            setError(validationError);
+        setLoginError('');
+        if (!loginEmail.includes('@') || !loginEmail.includes('.')) {
+            setLoginError('Please enter a valid email.');
+            return;
+        }
+        if (loginPassword.length < 6) {
+            setLoginError('Password must be at least 6 characters.');
             return;
         }
 
-        if (activeTab === 'login') {
-            const result = auth.login(formData.email, formData.password);
-            if (result.success) {
-                if (result.user.onboardingComplete) {
-                    navigate('/');
-                } else {
-                    navigate('/onboarding');
-                }
+        const user = getUser();
+        if (user && user.email === loginEmail) {
+            if (isOnboarded()) {
+                navigate('/stages');
             } else {
-                setError(result.error);
+                navigate('/onboarding');
             }
         } else {
-            const result = auth.register({
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                email: formData.email,
-                password: formData.password
-            });
-            if (result.success) {
-                navigate('/onboarding');
-            } else {
-                setError(result.error);
-            }
+            setLoginError('No account found with this email.');
         }
     };
 
-    // Aesthetic: slow animated background
-    const bgStyle = {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'radial-gradient(circle at 50% -20%, rgba(46, 204, 113, 0.15), var(--bg) 70%)',
-        zIndex: -1,
-        animation: 'pulse-gradient 8s ease-in-out infinite alternate'
+    const handleRegisterSubmit = (e) => {
+        e.preventDefault();
+        const errors = {};
+        if (regFirstName.length < 2) errors.firstName = 'Required';
+        if (regLastName.length < 2) errors.lastName = 'Required';
+        if (!regEmail.includes('@') || !regEmail.includes('.')) errors.email = 'Invalid email';
+        if (!regAge || parseInt(regAge) < 18) errors.age = 'You must be 18+ to use Turtrl';
+        if (regPassword.length < 8) errors.password = 'Min 8 characters';
+        if (regPassword !== regConfirmPassword) errors.confirmPassword = 'Passwords do not match';
+        if (!regAgree) errors.agree = 'You must agree to the Terms';
+
+        if (Object.keys(errors).length > 0) {
+            setRegErrors(errors);
+            return;
+        }
+
+        // Save default user
+        const newUser = {
+            firstName: regFirstName,
+            lastName: regLastName,
+            email: regEmail,
+            password: regPassword, // mock local storage only
+            level: null,
+            currentStage: 1,
+            completedStages: [],
+            virtualBalance: 10000,
+            points: 0,
+            rubies: 0,
+            streak: 0,
+            bestStreak: 0,
+            lastStreakDate: null,
+            streakShields: 0,
+            tradeHistory: [],
+            badges: ['first_login'],
+            memberSince: new Date().toISOString(),
+            feedbackGiven: [],
+            interests: [],
+            riskType: null,
+            monthlySavings: 500
+        };
+        saveUser(newUser);
+        navigate('/onboarding');
     };
 
-    return (
-        <div style={{ position: 'relative', width: '100%', minHeight: '100%', padding: '24px', display: 'flex', flexDirection: 'column' }}>
-            <div style={bgStyle} />
+    const mobilePageStyle = {
+        background: 'radial-gradient(ellipse at 50% 20%, rgba(46,204,113,0.08) 0%, var(--bg) 60%)',
+        padding: '32px 24px',
+        justifyContent: 'center',
+        flex: 1
+    };
 
-            {/* Brand Header */}
-            <div style={{ textAlign: 'center', marginTop: '40px', marginBottom: '40px' }}>
-                <h1 style={{ fontSize: '3rem', margin: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    Turtrl<span style={{ color: 'var(--green)' }}>.</span>
-                </h1>
-                <p style={{ color: 'var(--muted)', marginTop: '8px', fontSize: '1.1rem' }}>
-                    Your journey to €100K starts here
-                </p>
+    const desktopPageStyle = {
+        display: 'flex',
+        minHeight: '100vh',
+        width: '100%',
+        margin: '-32px -40px', // Negate MainContent padding to go full width
+        background: 'var(--bg)'
+    };
+
+    const loginContent = (
+        <div style={{ maxWidth: '400px', width: '100%', margin: '0 auto' }}>
+            {!isDesktop && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+                    <Mascot size={110} animation="float" />
+                    <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '32px', color: 'var(--green)', margin: '16px 0 4px', fontWeight: 800 }}>
+                        Turtrl<span style={{ color: 'var(--gold)' }}>.</span>
+                    </h1>
+                    <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '14px', color: 'var(--muted)', margin: 0 }}>
+                        Your journey to €100K starts here
+                    </p>
+                </div>
+            )}
+
+            {/* TAB TOGGLE */}
+            <div style={{ background: 'var(--card)', borderRadius: '14px', padding: '5px', display: 'flex', marginBottom: '24px' }}>
+                <button
+                    onClick={() => setActiveTab('login')}
+                    style={{
+                        flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', transition: 'all 0.2s', cursor: 'pointer',
+                        background: activeTab === 'login' ? 'var(--green)' : 'transparent',
+                        color: activeTab === 'login' ? '#000' : 'var(--muted)'
+                    }}
+                >
+                    Log In
+                </button>
+                <button
+                    onClick={() => setActiveTab('register')}
+                    style={{
+                        flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', transition: 'all 0.2s', cursor: 'pointer',
+                        background: activeTab === 'register' ? 'var(--green)' : 'transparent',
+                        color: activeTab === 'register' ? '#000' : 'var(--muted)'
+                    }}
+                >
+                    Create Account
+                </button>
             </div>
 
-            {/* Main Card */}
-            <div className="card" style={{ flex: 1, padding: '32px 24px' }}>
-
-                {/* Tab Toggle */}
-                <div style={{ display: 'flex', marginBottom: '32px', background: 'var(--card2)', borderRadius: '12px', padding: '4px' }}>
-                    <button
-                        onClick={() => setActiveTab('login')}
-                        style={{
-                            flex: 1,
-                            padding: '12px',
-                            borderRadius: '8px',
-                            background: activeTab === 'login' ? 'var(--card)' : 'transparent',
-                            color: activeTab === 'login' ? 'var(--text)' : 'var(--muted)',
-                            fontWeight: activeTab === 'login' ? 'bold' : 'normal',
-                            boxShadow: activeTab === 'login' ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'
-                        }}
-                    >
-                        Login
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('register')}
-                        style={{
-                            flex: 1,
-                            padding: '12px',
-                            borderRadius: '8px',
-                            background: activeTab === 'register' ? 'var(--card)' : 'transparent',
-                            color: activeTab === 'register' ? 'var(--text)' : 'var(--muted)',
-                            fontWeight: activeTab === 'register' ? 'bold' : 'normal',
-                            boxShadow: activeTab === 'register' ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'
-                        }}
-                    >
-                        Register
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-                    {error && (
-                        <div style={{ padding: '12px', background: 'rgba(255, 77, 79, 0.1)', color: 'var(--error)', borderRadius: '8px', fontSize: '0.875rem' }}>
-                            {error}
-                        </div>
-                    )}
-
-                    {activeTab === 'register' && (
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <input
-                                type="text" name="firstName" placeholder="First Name"
-                                className="input-field" value={formData.firstName} onChange={handleChange}
-                            />
-                            <input
-                                type="text" name="lastName" placeholder="Last Name"
-                                className="input-field" value={formData.lastName} onChange={handleChange}
-                            />
-                        </div>
-                    )}
-
-                    <input
-                        type="email" name="email" placeholder="Email address"
-                        className="input-field" value={formData.email} onChange={handleChange}
-                    />
+            {/* LOGIN FORM */}
+            {activeTab === 'login' && (
+                <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div>
+                        <input type="email" placeholder="Email Address" className={`input-field ${loginError && !loginEmail ? 'error' : ''}`} value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
+                    </div>
 
                     <div style={{ position: 'relative' }}>
                         <input
-                            type={showPassword ? 'text' : 'password'} name="password"
-                            placeholder="Password" className="input-field"
-                            value={formData.password} onChange={handleChange}
+                            type={loginShowPw ? "text" : "password"}
+                            placeholder="Password"
+                            className={`input-field ${loginError && !loginPassword ? 'error' : ''}`}
+                            value={loginPassword}
+                            onChange={e => setLoginPassword(e.target.value)}
+                            style={{ paddingRight: '48px' }}
                         />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', fontSize: '0.875rem' }}
-                        >
-                            {showPassword ? 'Hide' : 'Show'}
+                        <button type="button" onClick={() => setLoginShowPw(!loginShowPw)} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '16px' }}>
+                            {loginShowPw ? '🙈' : '👁'}
                         </button>
                     </div>
 
-                    {activeTab === 'login' && (
-                        <div style={{ textAlign: 'right' }}>
-                            <a href="#" style={{ fontSize: '0.875rem', color: 'var(--muted)' }}>Forgot password?</a>
-                        </div>
-                    )}
+                    <div style={{ textAlign: 'right', fontSize: '13px', color: 'var(--green)', cursor: 'pointer', fontWeight: 500 }}>
+                        Forgot password?
+                    </div>
 
-                    {activeTab === 'register' && (
-                        <>
-                            <input
-                                type={showPassword ? 'text' : 'password'} name="confirmPassword"
-                                placeholder="Confirm Password" className="input-field"
-                                value={formData.confirmPassword} onChange={handleChange}
-                            />
-                            <input
-                                type="number" name="age" placeholder="Your age (18+)"
-                                className="input-field" value={formData.age} onChange={handleChange}
-                                min="18"
-                            />
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.875rem', color: 'var(--muted)', marginTop: '8px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox" name="agreed"
-                                    checked={formData.agreed} onChange={handleChange}
-                                    style={{ width: '20px', height: '20px', accentColor: 'var(--green)' }}
-                                />
-                                I agree to the Terms & Privacy Policy
-                            </label>
-                        </>
-                    )}
+                    {loginError && <div className="field-error" style={{ textAlign: 'center' }}>{loginError}</div>}
 
-                    <button
-                        type="submit"
-                        className="btn-primary"
-                        style={{ marginTop: '16px', fontSize: '1.1rem', background: 'var(--green)', color: '#000' }}
-                    >
-                        {activeTab === 'login' ? 'Log In' : 'Create Account'}
-                    </button>
+                    <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>Log In →</button>
 
-                    {activeTab === 'login' && (
-                        <>
-                            <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', color: 'var(--muted)', fontSize: '0.875rem' }}>
-                                <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
-                                <span style={{ padding: '0 12px' }}>or continue with</span>
-                                <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
-                            </div>
+                    <div style={{ display: 'flex', alignItems: 'center', margin: '16px 0', color: 'var(--muted)' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
+                        <span style={{ padding: '0 12px', fontSize: '13px' }}>or</span>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
+                    </div>
 
-                            <button type="button" className="btn-secondary" style={{ display: 'flex', gap: '12px' }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                                </svg>
-                                Google
-                            </button>
-                        </>
-                    )}
-
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <button type="button" onClick={() => alert('Social login coming soon!')} style={{ flex: 1, background: '#fff', color: '#000', border: 'none', borderRadius: '12px', padding: '12px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
+                            Google
+                        </button>
+                        <button type="button" onClick={() => alert('Social login coming soon!')} style={{ flex: 1, background: '#000', color: '#fff', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.19 2.24-.86 3.43-.88 1.14-.02 2.47.53 3.31 1.48-2.6 1.54-2.14 4.8.44 5.86-.68 1.95-1.76 4.31-2.26 5.71zm-3.12-14.77c.45-1.39-.17-2.91-1.3-3.83-1.11.96-1.8 2.37-1.31 3.73 1.1-.06 2.01-.84 2.61-1.9z" /></svg>
+                            Apple
+                        </button>
+                    </div>
                 </form>
-            </div>
+            )}
 
-            <div style={{ textAlign: 'center', marginTop: '32px', color: 'var(--muted)', fontSize: '0.875rem' }}>
-                <p>Mock Credentials for Demo:</p>
-                <p>Email: test@test.com / Pass: 123456</p>
-            </div>
+            {/* CREATE ACCOUNT FORM */}
+            {activeTab === 'register' && (
+                <form onSubmit={handleRegisterSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <div style={{ flex: 1 }}>
+                            <input type="text" placeholder="First Name" className={`input-field ${regErrors.firstName ? 'error' : ''}`} value={regFirstName} onChange={e => setRegFirstName(e.target.value)} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <input type="text" placeholder="Last Name" className={`input-field ${regErrors.lastName ? 'error' : ''}`} value={regLastName} onChange={e => setRegLastName(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <input type="email" placeholder="Email Address" className={`input-field ${regErrors.email ? 'error' : ''}`} value={regEmail} onChange={e => setRegEmail(e.target.value)} />
+                        {regErrors.email && <div className="field-error">{regErrors.email}</div>}
+                    </div>
+
+                    <div>
+                        <input type="number" placeholder="Age" className={`input-field ${regErrors.age ? 'error' : ''}`} value={regAge} onChange={e => setRegAge(e.target.value)} />
+                        {regErrors.age && <div className="field-error">{regErrors.age}</div>}
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                        <input
+                            type={regShowPw ? "text" : "password"}
+                            placeholder="Password (min 8 chars)"
+                            className={`input-field ${regErrors.password ? 'error' : ''}`}
+                            value={regPassword}
+                            onChange={e => setRegPassword(e.target.value)}
+                            style={{ paddingRight: '48px' }}
+                        />
+                        <button type="button" onClick={() => setRegShowPw(!regShowPw)} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '16px' }}>
+                            {regShowPw ? '🙈' : '👁'}
+                        </button>
+                        {regErrors.password && <div className="field-error">{regErrors.password}</div>}
+                    </div>
+
+                    <div>
+                        <input
+                            type={regShowPw ? "text" : "password"}
+                            placeholder="Confirm Password"
+                            className={`input-field ${regErrors.confirmPassword ? 'error' : ''}`}
+                            value={regConfirmPassword}
+                            onChange={e => setRegConfirmPassword(e.target.value)}
+                        />
+                        {regErrors.confirmPassword && <div className="field-error">{regErrors.confirmPassword}</div>}
+                    </div>
+
+                    <div onClick={() => setRegAgree(!regAgree)} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', marginTop: '4px' }}>
+                        <div style={{
+                            width: '20px', height: '20px', borderRadius: '4px',
+                            border: `2px solid ${regErrors.agree ? 'var(--red)' : regAgree ? 'var(--green)' : 'var(--border)'}`,
+                            background: regAgree ? 'var(--green)' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            {regAgree && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                        </div>
+                        <span style={{ fontSize: '13px', color: 'var(--muted)' }}>I agree to the Terms & Privacy Policy</span>
+                    </div>
+
+                    <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>Create Account →</button>
+                </form>
+            )}
         </div>
     );
-};
 
-export default Login;
+    if (isDesktop) {
+        return (
+            <div style={desktopPageStyle}>
+                <div style={{ flex: 1, background: 'linear-gradient(135deg, #0f2d1a, #0D1117)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                    <Mascot size={200} animation="float" />
+                    <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '48px', color: 'var(--green)', margin: '32px 0 8px', fontWeight: 800 }}>
+                        Turtrl<span style={{ color: 'var(--gold)' }}>.</span>
+                    </h1>
+                    <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '18px', color: 'var(--muted)', margin: '0 0 48px', textAlign: 'center' }}>
+                        Your journey to €100K starts here
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '16px', color: 'var(--text)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '20px' }}>✅</span> Learn investing step by step
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '20px' }}>✅</span> Practice with virtual money
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '20px' }}>✅</span> Build your path to €100K
+                        </div>
+                    </div>
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 48px' }}>
+                    {loginContent}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="page" style={mobilePageStyle}>
+            {loginContent}
+        </div>
+    );
+}
