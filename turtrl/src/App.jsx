@@ -9,6 +9,9 @@ import Portfolio from './pages/Portfolio';
 import AIChat from './pages/AIChat';
 import News from './pages/News';
 import Profile from './pages/Profile';
+import Streak from './pages/Streak';
+import Points from './pages/Points';
+import Leaderboard from './pages/Leaderboard';
 import { auth } from './utils/auth';
 
 // Simple Route Guard
@@ -85,6 +88,21 @@ function App() {
           <Route path="/profile" element={
             <PrivateRoute>
               <Profile />
+            </PrivateRoute>
+          } />
+          <Route path="/streak" element={
+            <PrivateRoute>
+              <Streak />
+            </PrivateRoute>
+          } />
+          <Route path="/points" element={
+            <PrivateRoute>
+              <Points />
+            </PrivateRoute>
+          } />
+          <Route path="/leaderboard" element={
+            <PrivateRoute>
+              <Leaderboard />
             </PrivateRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />

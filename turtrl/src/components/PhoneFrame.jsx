@@ -4,11 +4,14 @@ import BottomNav from './BottomNav';
 
 const PhoneFrame = ({ children }) => {
     const [mounted, setMounted] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
     const location = useLocation();
 
-    // For transition animations
     useEffect(() => {
         setMounted(true);
+        const handleResize = () => setIsDesktop(window.innerWidth > 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const hideNavPaths = ['/login', '/onboarding'];
@@ -21,29 +24,29 @@ const PhoneFrame = ({ children }) => {
             justifyContent: 'center',
             minHeight: '100vh',
             backgroundColor: 'var(--bg)',
-            padding: '20px 0',
+            padding: isDesktop ? '20px 0' : '0',
             overflow: 'hidden'
         }}>
-            {/* Desktop Wrapper / Phone Frame */}
+            {/* Responsive wrapper: phone frame on desktop, full-width on mobile */}
             <div
                 style={{
                     width: '100%',
-                    maxWidth: '430px', /* iPhone 14 Pro Max width */
-                    height: '100dvh',
-                    maxHeight: '932px',
+                    maxWidth: isDesktop ? '430px' : 'none',
+                    height: isDesktop ? '100dvh' : '100dvh',
+                    maxHeight: isDesktop ? '932px' : 'none',
                     position: 'relative',
                     backgroundColor: 'var(--bg)',
-                    borderRadius: window.innerWidth > 430 ? '40px' : '0px',
+                    borderRadius: isDesktop ? '40px' : '0px',
                     overflow: 'hidden',
-                    boxShadow: window.innerWidth > 430 ? '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 8px #1a1e24' : 'none',
+                    boxShadow: isDesktop ? '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 8px #1a1e24' : 'none',
                     display: 'flex',
                     flexDirection: 'column',
                     transition: 'opacity 0.5s ease',
                     opacity: mounted ? 1 : 0
                 }}
             >
-                {/* Dynamic Island fake element for realism on desktop */}
-                {window.innerWidth > 430 && (
+                {/* Dynamic Island — only on desktop phone frame */}
+                {isDesktop && (
                     <div style={{
                         position: 'absolute',
                         top: '12px',
@@ -53,7 +56,8 @@ const PhoneFrame = ({ children }) => {
                         height: '35px',
                         backgroundColor: '#000',
                         borderRadius: '20px',
-                        zIndex: 1000
+                        zIndex: 999,
+                        pointerEvents: 'none'
                     }}></div>
                 )}
 
@@ -62,7 +66,7 @@ const PhoneFrame = ({ children }) => {
                     flex: 1,
                     overflowY: 'auto',
                     overflowX: 'hidden',
-                    paddingBottom: showNav ? '80px' : '0', // Leave space for BottomNav
+                    paddingBottom: showNav ? '80px' : '0',
                     scrollBehavior: 'smooth'
                 }} className="hide-scrollbar page-enter-active">
                     {children}

@@ -22,31 +22,64 @@ const Home = () => {
         <div style={{ padding: '24px', paddingBottom: '100px' }}>
             {/* Sticky Header */}
             <div style={{
-                position: 'sticky', top: 0, zIndex: 10,
-                backgroundColor: 'rgba(13, 17, 23, 0.9)', backdropFilter: 'blur(10px)',
-                margin: '-24px -24px 24px -24px', padding: '24px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                position: 'sticky', top: 0, zIndex: 1001,
+                backgroundColor: 'rgba(13, 17, 23, 0.95)', backdropFilter: 'blur(12px)',
+                margin: '-24px -24px 24px -24px', padding: '14px 24px 10px',
+                display: 'flex', flexDirection: 'column', gap: '10px'
             }}>
-                <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Turtrl<span style={{ color: 'var(--green)' }}>.</span></h1>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <button style={{ position: 'relative' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                        </svg>
-                        <div style={{ position: 'absolute', top: 0, right: 2, width: 8, height: 8, background: 'var(--orange)', borderRadius: '50%' }}></div>
-                    </button>
-                    <div
-                        onClick={() => navigate('/profile')}
-                        style={{
-                            width: '36px', height: '36px', borderRadius: '50%',
-                            background: 'var(--purple)', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontWeight: 'bold', cursor: 'pointer'
-                        }}
-                    >
-                        {user?.firstName?.[0] || 'U'}
+                {/* Top Row: Logo + Icons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Turtrl<span style={{ color: 'var(--green)' }}>.</span></h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button style={{ position: 'relative' }}>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <div style={{ position: 'absolute', top: 0, right: 2, width: 8, height: 8, background: 'var(--orange)', borderRadius: '50%' }}></div>
+                        </button>
+                        <div
+                            onClick={() => navigate('/profile')}
+                            style={{
+                                width: '32px', height: '32px', borderRadius: '50%',
+                                background: 'var(--purple)', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem'
+                            }}
+                        >
+                            {user?.firstName?.[0] || 'U'}
+                        </div>
                     </div>
+                </div>
+
+                {/* Bottom Row: Streak / Points / Leaderboard badges */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button onClick={() => navigate('/streak')} style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        background: 'rgba(244, 196, 48, 0.1)', border: '1px solid rgba(244, 196, 48, 0.25)',
+                        borderRadius: '20px', padding: '6px 12px', fontSize: '0.78rem',
+                        fontWeight: 'bold', color: 'var(--gold)', cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    }}>
+                        🔥 {mockPortfolioData.streakDays}
+                    </button>
+                    <button onClick={() => navigate('/points')} style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        background: 'rgba(124, 58, 237, 0.1)', border: '1px solid rgba(124, 58, 237, 0.25)',
+                        borderRadius: '20px', padding: '6px 12px', fontSize: '0.78rem',
+                        fontWeight: 'bold', color: 'var(--purple)', cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    }}>
+                        ⭐ 2,340
+                    </button>
+                    <button onClick={() => navigate('/leaderboard')} style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        background: 'rgba(46, 204, 113, 0.1)', border: '1px solid rgba(46, 204, 113, 0.25)',
+                        borderRadius: '20px', padding: '6px 12px', fontSize: '0.78rem',
+                        fontWeight: 'bold', color: 'var(--green)', cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                    }}>
+                        🏆 #4
+                    </button>
                 </div>
             </div>
 
@@ -84,7 +117,7 @@ const Home = () => {
                         </div>
                         <div>
                             <p style={{ fontSize: '0.9rem', color: 'var(--muted)' }}>To your €100K goal</p>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--green)', marginTop: '4px' }}>On track for {data?.targetDate || '2030'}</p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--green)', marginTop: '4px' }}>On track for 2030</p>
                         </div>
                     </div>
                 </div>
@@ -92,11 +125,13 @@ const Home = () => {
 
             {/* Streak Banner */}
             {showStreak && (
-                <div style={{
-                    background: 'var(--card2)', borderRadius: '12px', padding: '12px 16px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px',
-                    border: '1px solid var(--border)'
-                }}>
+                <div
+                    onClick={() => navigate('/streak')}
+                    style={{
+                        background: 'var(--card2)', borderRadius: '12px', padding: '12px 16px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px',
+                        border: '1px solid var(--border)', cursor: 'pointer'
+                    }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <span style={{ fontSize: '1.5rem' }}>🔥</span>
                         <div>
@@ -104,9 +139,34 @@ const Home = () => {
                             <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>You logged in! Keep it up.</div>
                         </div>
                     </div>
-                    <button onClick={() => setShowStreak(false)} style={{ color: 'var(--muted)', padding: '4px' }}>✕</button>
+                    <button onClick={(e) => { e.stopPropagation(); setShowStreak(false); }} style={{ color: 'var(--muted)', padding: '4px' }}>✕</button>
                 </div>
             )}
+
+            {/* Gamification Hub */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+                {[
+                    { icon: '🔥', label: 'Streaks', path: '/streak', color: 'var(--gold)' },
+                    { icon: '⭐', label: 'Points', path: '/points', color: 'var(--purple)' },
+                    { icon: '🏆', label: 'Leaderboard', path: '/leaderboard', color: 'var(--green)' },
+                ].map((item, i) => (
+                    <button
+                        key={i}
+                        onClick={() => navigate(item.path)}
+                        style={{
+                            flex: 1, padding: '16px 8px', borderRadius: '16px',
+                            background: 'var(--card)', border: '1px solid var(--border)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+                            cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = item.color; e.currentTarget.style.boxShadow = `0 0 15px ${item.color}30`; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+                    >
+                        <span style={{ fontSize: '1.5rem' }}>{item.icon}</span>
+                        <span style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--muted)' }}>{item.label}</span>
+                    </button>
+                ))}
+            </div>
 
             {/* Quick Actions */}
             <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', marginBottom: '40px', paddingBottom: '8px' }} className="hide-scrollbar">

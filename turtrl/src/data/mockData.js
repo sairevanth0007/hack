@@ -80,3 +80,77 @@ export const chatIntros = [
     "Welcome back! Your saving streak is at 14 days. Keep it up! 🔥",
     "I'm keeping an eye on the market. Let me know if you want a daily summary."
 ];
+
+export const mockStreakData = {
+    currentStreak: 14,
+    bestStreak: 21,
+    totalActiveDays: 47,
+    weekCalendar: [
+        { day: 'Mon', date: 3, active: true },
+        { day: 'Tue', date: 4, active: true },
+        { day: 'Wed', date: 5, active: true },
+        { day: 'Thu', date: 6, active: false },
+        { day: 'Fri', date: 7, active: false },
+        { day: 'Sat', date: 8, active: false },
+        { day: 'Sun', date: 9, active: false },
+    ],
+    milestones: [
+        { days: 7, label: '7 Days', reached: true, reward: '+50 XP' },
+        { days: 14, label: '14 Days', reached: true, reward: '+150 XP' },
+        { days: 30, label: '30 Days', reached: false, reward: '+500 XP' },
+        { days: 60, label: '60 Days', reached: false, reward: '+1,200 XP' },
+        { days: 100, label: '100 Days', reached: false, reward: '+3,000 XP' },
+    ],
+    rewards: [
+        { id: 'sr1', title: 'Early Bird Badge', description: '7-day streak reward', icon: '🐣', unlocked: true },
+        { id: 'sr2', title: 'Fire Starter', description: '14-day streak reward', icon: '🔥', unlocked: true },
+        { id: 'sr3', title: 'Unstoppable', description: '30-day streak reward', icon: '☄️', unlocked: false },
+        { id: 'sr4', title: 'Diamond Hands', description: '60-day streak reward', icon: '💎', unlocked: false },
+        { id: 'sr5', title: 'Legendary', description: '100-day streak reward', icon: '👑', unlocked: false },
+    ]
+};
+
+export const mockPointsData = {
+    totalPoints: 2340,
+    level: { name: 'Silver Investor', number: 3, currentXP: 2340, nextLevelXP: 5000, color: '#C0C0C0' },
+    levels: [
+        { name: 'Bronze Starter', number: 1, minXP: 0 },
+        { name: 'Bronze Investor', number: 2, minXP: 500 },
+        { name: 'Silver Investor', number: 3, minXP: 2000 },
+        { name: 'Gold Investor', number: 4, minXP: 5000 },
+        { name: 'Platinum Pro', number: 5, minXP: 10000 },
+        { name: 'Diamond Legend', number: 6, minXP: 25000 },
+    ],
+    recentActivity: [
+        { id: 'pa1', type: 'earn', title: 'Daily Login', points: 10, time: '2h ago', icon: '✅' },
+        { id: 'pa2', type: 'earn', title: 'Completed Quiz', points: 50, time: '5h ago', icon: '📝' },
+        { id: 'pa3', type: 'earn', title: 'First Investment', points: 200, time: '1d ago', icon: '🌱' },
+        { id: 'pa4', type: 'earn', title: '14-Day Streak Bonus', points: 150, time: '1d ago', icon: '🔥' },
+        { id: 'pa5', type: 'spend', title: 'Redeemed: Custom Theme', points: -100, time: '3d ago', icon: '🎨' },
+        { id: 'pa6', type: 'earn', title: 'Referred a Friend', points: 500, time: '5d ago', icon: '🤝' },
+        { id: 'pa7', type: 'earn', title: 'Portfolio Milestone: €25K', points: 300, time: '1w ago', icon: '🏆' },
+    ],
+    rewards: [
+        { id: 'pr1', title: 'Custom Theme', cost: 100, icon: '🎨', description: 'Unlock a custom app color theme', redeemed: true },
+        { id: 'pr2', title: 'Priority Support', cost: 250, icon: '⚡', description: 'Jump the support queue for 30 days', redeemed: false },
+        { id: 'pr3', title: 'Fee-Free Trade', cost: 500, icon: '💸', description: 'One commission-free trade', redeemed: false },
+        { id: 'pr4', title: 'Pro Badge', cost: 1000, icon: '🏅', description: 'Exclusive profile badge', redeemed: false },
+        { id: 'pr5', title: 'AI Advisor Premium', cost: 2500, icon: '🤖', description: '30 days of premium AI insights', redeemed: false },
+    ]
+};
+
+export const mockLeaderboardData = {
+    currentUserRank: 4,
+    users: [
+        { rank: 1, name: 'Emma W.', initials: 'EW', points: 12450, streak: 42, isCurrentUser: false, color: '#7c3aed' },
+        { rank: 2, name: 'Lucas M.', initials: 'LM', points: 9800, streak: 35, isCurrentUser: false, color: '#ff6b35' },
+        { rank: 3, name: 'Sophie K.', initials: 'SK', points: 8920, streak: 28, isCurrentUser: false, color: '#2ecc71' },
+        { rank: 4, name: 'You', initials: 'AK', points: 2340, streak: 14, isCurrentUser: true, color: '#2ecc71' },
+        { rank: 5, name: 'Noah T.', initials: 'NT', points: 2100, streak: 10, isCurrentUser: false, color: '#f4c430' },
+        { rank: 6, name: 'Mia R.', initials: 'MR', points: 1850, streak: 9, isCurrentUser: false, color: '#7c3aed' },
+        { rank: 7, name: 'Liam B.', initials: 'LB', points: 1600, streak: 7, isCurrentUser: false, color: '#ff6b35' },
+        { rank: 8, name: 'Olivia D.', initials: 'OD', points: 1200, streak: 5, isCurrentUser: false, color: '#2ecc71' },
+        { rank: 9, name: 'Ethan P.', initials: 'EP', points: 980, streak: 3, isCurrentUser: false, color: '#f4c430' },
+        { rank: 10, name: 'Ava C.', initials: 'AC', points: 750, streak: 2, isCurrentUser: false, color: '#7c3aed' },
+    ]
+};
