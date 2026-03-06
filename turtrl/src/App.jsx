@@ -18,6 +18,7 @@ import StreakPage from './pages/StreakPage';
 import CoinsPage from './pages/CoinsPage';
 import ChainsPage from './pages/ChainsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { isLoggedIn } from './utils/auth';
 
@@ -69,14 +70,14 @@ function AppLayout() {
                     <Route path="/" element={<Login />} />
                     <Route path="/onboarding" element={<Onboarding />} />
 
-                    <Route path="/stages" element={<PrivateRoute><Stages /></PrivateRoute>} />
-                    <Route path="/news" element={<PrivateRoute><News /></PrivateRoute>} />
-                    <Route path="/analysis" element={<PrivateRoute><Analysis /></PrivateRoute>} />
-                    <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-                    <Route path="/streak" element={<PrivateRoute><StreakPage /></PrivateRoute>} />
-                    <Route path="/coins" element={<PrivateRoute><CoinsPage /></PrivateRoute>} />
-                    <Route path="/chains" element={<PrivateRoute><ChainsPage /></PrivateRoute>} />
-                    <Route path="/leaderboard" element={<PrivateRoute><LeaderboardPage /></PrivateRoute>} />
+                    <Route path="/stages" element={<PrivateRoute><ErrorBoundary><Stages /></ErrorBoundary></PrivateRoute>} />
+                    <Route path="/news" element={<PrivateRoute><ErrorBoundary><News /></ErrorBoundary></PrivateRoute>} />
+                    <Route path="/analysis" element={<PrivateRoute><ErrorBoundary><Analysis /></ErrorBoundary></PrivateRoute>} />
+                    <Route path="/profile" element={<PrivateRoute><ErrorBoundary><Profile /></ErrorBoundary></PrivateRoute>} />
+                    <Route path="/streak" element={<PrivateRoute><ErrorBoundary><StreakPage /></ErrorBoundary></PrivateRoute>} />
+                    <Route path="/coins" element={<PrivateRoute><ErrorBoundary><CoinsPage /></ErrorBoundary></PrivateRoute>} />
+                    <Route path="/chains" element={<PrivateRoute><ErrorBoundary><ChainsPage /></ErrorBoundary></PrivateRoute>} />
+                    <Route path="/leaderboard" element={<PrivateRoute><ErrorBoundary><LeaderboardPage /></ErrorBoundary></PrivateRoute>} />
 
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>

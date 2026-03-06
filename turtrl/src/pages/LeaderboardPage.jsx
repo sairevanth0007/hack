@@ -10,21 +10,34 @@ export default function LeaderboardPage() {
 
     useEffect(() => {
         const loggedInUser = getUser();
+        if (!loggedInUser) {
+            navigate('/');
+            return;
+        }
         setCurrentUser(loggedInUser);
 
-        // Fetch all users from localStorage
-        const users = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('turtrl_user_') && key !== 'turtrl_user') {
-                try {
-                    const u = JSON.parse(localStorage.getItem(key));
-                    users.push(u);
-                } catch (e) {
-                    console.error("Failed to parse user", key, e);
+        const getAllUsers = () => {
+            try {
+                const usersList = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('turtrl_user_') && key !== 'turtrl_user') {
+                        try {
+                            const val = localStorage.getItem(key);
+                            if (val) usersList.push(JSON.parse(val));
+                        } catch (e) {
+                            // skip malformed entry
+                        }
+                    }
                 }
+                return usersList;
+            } catch (e) {
+                return [];
             }
-        }
+        };
+
+        // Fetch all users from localStorage
+        const users = getAllUsers();
 
         if (users.length === 0 && loggedInUser) {
             // Need the logged in user to be in the list if not stored with turtrl_user_email key
@@ -73,31 +86,32 @@ export default function LeaderboardPage() {
 
     return (
         <div style={{
-            padding: '64px 20px 80px',
+            paddingTop: '56px',
+            paddingBottom: '80px',
+            minHeight: '100vh',
+            background: 'var(--bg)',
+            fontFamily: 'DM Sans, sans-serif',
             maxWidth: '600px',
             margin: '0 auto',
-            overflowY: 'auto',
-            minHeight: '100vh',
-            msOverflowStyle: 'none',
-            scrollbarWidth: 'none'
+            width: '100%'
         }}>
             {/* Sticky Header */}
             <div style={{
                 position: 'sticky',
                 top: '56px',
                 background: 'var(--bg)',
-                padding: '12px 0',
+                padding: '12px 20px',
+                borderBottom: '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                zIndex: 10,
-                marginBottom: '16px'
+                zIndex: 10
             }}>
                 <button
                     onClick={() => navigate(-1)}
                     style={{
                         background: 'none', border: 'none', color: 'var(--muted)',
-                        fontSize: '20px', cursor: 'pointer',
+                        fontSize: '20px', cursor: 'pointer', padding: '4px 8px',
                         minWidth: '44px', minHeight: '44px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}
@@ -106,95 +120,97 @@ export default function LeaderboardPage() {
                 >
                     ←
                 </button>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '20px', fontWeight: 700, flex: 1, textAlign: 'left' }}>
+                <span style={{ fontFamily: "'Syne', sans-serif", fontSize: '20px', fontWeight: '700' }}>
                     Leaderboard 🏆
+                </span>
+            </div>
+
+            <div style={{ textAlign: 'center', padding: '24px 20px 16px' }}>
+                <div style={{ background: 'var(--card)', borderRadius: '14px', padding: '5px', display: 'flex', width: '100%' }}>
+                    <button
+                        onClick={() => setActiveTab('coins')}
+                        style={{
+                            flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', transition: 'all 0.2s', cursor: 'pointer', minHeight: '44px',
+                            background: activeTab === 'coins' ? 'var(--green)' : 'transparent',
+                            color: activeTab === 'coins' ? '#000' : 'var(--muted)'
+                        }}
+                    >
+                        Coins
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('streak')}
+                        style={{
+                            flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', transition: 'all 0.2s', cursor: 'pointer', minHeight: '44px',
+                            background: activeTab === 'streak' ? 'var(--green)' : 'transparent',
+                            color: activeTab === 'streak' ? '#000' : 'var(--muted)'
+                        }}
+                    >
+                        Streak
+                    </button>
                 </div>
             </div>
 
-            <div style={{ background: 'var(--card)', borderRadius: '14px', padding: '5px', display: 'flex', marginBottom: '24px' }}>
-                <button
-                    onClick={() => setActiveTab('coins')}
-                    style={{
-                        flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', transition: 'all 0.2s', cursor: 'pointer', minHeight: '44px',
-                        background: activeTab === 'coins' ? 'var(--green)' : 'transparent',
-                        color: activeTab === 'coins' ? '#000' : 'var(--muted)'
-                    }}
-                >
-                    Coins
-                </button>
-                <button
-                    onClick={() => setActiveTab('streak')}
-                    style={{
-                        flex: 1, padding: '10px', borderRadius: '10px', border: 'none', fontWeight: 600, fontSize: '14px', transition: 'all 0.2s', cursor: 'pointer', minHeight: '44px',
-                        background: activeTab === 'streak' ? 'var(--green)' : 'transparent',
-                        color: activeTab === 'streak' ? '#000' : 'var(--muted)'
-                    }}
-                >
-                    Streak
-                </button>
-            </div>
+            <div style={{ padding: '0 20px', width: '100%' }}>
+                {isOnlyUser && (
+                    <div style={{ textAlign: 'center', margin: '8px 0 24px', color: 'var(--muted)', fontSize: '14px' }}>
+                        No other players yet. Share Turtrl with friends! 🐢
+                    </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                    {displayUsers.map((u, idx) => {
+                        const isCurrent = u.email === currentUser.email;
+                        let rankColor = 'var(--muted)';
+                        let rankIcon = '';
+                        if (idx === 0) { rankColor = 'var(--gold)'; rankIcon = '👑'; }
+                        else if (idx === 1) { rankColor = '#C0C0C0'; rankIcon = '🥈'; }
+                        else if (idx === 2) { rankColor = '#CD7F32'; rankIcon = '🥉'; }
 
-            {isOnlyUser && (
-                <div style={{ textAlign: 'center', marginBottom: '24px', color: 'var(--muted)', fontSize: '14px' }}>
-                    No other players yet. Share Turtrl with friends! 🐢
-                </div>
-            )}
+                        const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Anonymous';
+                        const initial = name.substring(0, 2).toUpperCase();
+                        const color = u.color || colors[idx % colors.length];
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {displayUsers.map((u, idx) => {
-                    const isCurrent = u.email === currentUser.email;
-                    let rankColor = 'var(--muted)';
-                    let rankIcon = '';
-                    if (idx === 0) { rankColor = 'var(--gold)'; rankIcon = '👑'; }
-                    else if (idx === 1) { rankColor = '#C0C0C0'; rankIcon = '🥈'; }
-                    else if (idx === 2) { rankColor = '#CD7F32'; rankIcon = '🥉'; }
-
-                    const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Anonymous';
-                    const initial = name.substring(0, 2).toUpperCase();
-                    const color = u.color || colors[idx % colors.length];
-
-                    return (
-                        <div key={u.email || idx} className="card" style={{
-                            display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
-                            border: isCurrent ? '1.5px solid var(--green)' : '1px solid var(--border)',
-                            background: isCurrent ? 'var(--green-dim)' : 'var(--card)',
-                            borderLeft: isCurrent ? '4px solid var(--green)' : '1px solid var(--border)'
-                        }}>
-                            <div style={{ width: '24px', textAlign: 'center', color: rankColor, fontWeight: 700, fontSize: '14px' }}>
-                                {rankIcon || (idx + 1)}
-                            </div>
-
-                            <div style={{
-                                width: '36px', height: '36px', borderRadius: '50%',
-                                background: color, display: 'flex', alignItems: 'center',
-                                justifyContent: 'center', fontWeight: 'bold', color: '#fff',
-                                fontSize: '14px'
+                        return (
+                            <div key={u.email || idx} className="card" style={{
+                                display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
+                                border: isCurrent ? '1.5px solid var(--green)' : '1px solid var(--border)',
+                                background: isCurrent ? 'var(--green-dim)' : 'var(--card)',
+                                borderLeft: isCurrent ? '4px solid var(--green)' : '1px solid var(--border)'
                             }}>
-                                {initial}
-                            </div>
-
-                            <div style={{ flex: 1, overflow: 'hidden' }}>
-                                <div style={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {name}
-                                    {isCurrent && <span style={{ background: 'var(--green)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>YOU</span>}
-                                    {u.isMock && <span style={{ color: 'var(--muted)', fontSize: '10px', fontWeight: 400 }}>(Demo)</span>}
+                                <div style={{ width: '24px', textAlign: 'center', color: rankColor, fontWeight: 700, fontSize: '14px' }}>
+                                    {rankIcon || (idx + 1)}
                                 </div>
-                                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                                    Lvl {u.level || 1}
+
+                                <div style={{
+                                    width: '36px', height: '36px', borderRadius: '50%',
+                                    background: color, display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', fontWeight: 'bold', color: '#fff',
+                                    fontSize: '14px'
+                                }}>
+                                    {initial}
+                                </div>
+
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                                        {isCurrent && <span style={{ background: 'var(--green)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 800, flexShrink: 0 }}>YOU</span>}
+                                        {u.isMock && <span style={{ color: 'var(--muted)', fontSize: '10px', fontWeight: 400, flexShrink: 0 }}>(Demo)</span>}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                                        Lvl {u.level || 1}
+                                    </div>
+                                </div>
+
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                    {activeTab === 'coins' ? (
+                                        <div style={{ color: 'var(--green)', fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap' }}>{u.coins || 0} Coins</div>
+                                    ) : (
+                                        <div style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '14px', whiteSpace: 'nowrap' }}>{u.streak || 0} 🔥</div>
+                                    )}
                                 </div>
                             </div>
-
-                            <div style={{ textAlign: 'right' }}>
-                                {activeTab === 'coins' ? (
-                                    <div style={{ color: 'var(--green)', fontWeight: 700, fontSize: '14px' }}>{u.coins || 0} Coins</div>
-                                ) : (
-                                    <div style={{ color: 'var(--gold)', fontWeight: 700, fontSize: '14px' }}>{u.streak || 0} 🔥</div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
-        </div>
-    );
+            );
 }

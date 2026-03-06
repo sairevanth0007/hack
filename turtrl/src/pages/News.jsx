@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import TopNav from '../components/TopNav';
 import BottomNav from '../components/BottomNav';
 import Mascot from '../components/Mascot';
-import ConfettiEffect from '../components/ConfettiEffect';
+import { useNavigate } from 'react-router-dom';
 import { NEWS_ARTICLES } from '../utils/newsData';
-import { checkAndUpdateStreak, getUser, saveUser } from '../utils/auth';
+import { checkAndUpdateStreak, getUser, saveUser, awardCoins } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
 
 export default function News() {
     const { isDesktop } = useDevice();
+    const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [activeCategory, setActiveCategory] = useState('All');
     const [activeArticle, setActiveArticle] = useState(null); // the article being read/quizzed
@@ -17,16 +18,18 @@ export default function News() {
     useEffect(() => {
         const todayStr = new Date().toISOString().split('T')[0];
         let u = getUser();
-        if (u) {
-            if (u.lastDailyNewsDate !== todayStr) {
-                u.lastDailyNewsDate = todayStr;
-                u.dailyNewsCompleted = 0;
-                saveUser(u);
-                u = getUser();
-            }
-            setUser(u);
+        if (!u) {
+            navigate('/');
+            return;
         }
-    }, []);
+        if (u.lastDailyNewsDate !== todayStr) {
+            u.lastDailyNewsDate = todayStr;
+            u.dailyNewsCompleted = 0;
+            saveUser(u);
+            u = getUser();
+        }
+        setUser(u);
+    }, [navigate]);
 
     const todayStr = new Date().toISOString().split('T')[0];
     const streakAlreadyExtended = user && user.lastStreakDate === todayStr;
@@ -34,17 +37,21 @@ export default function News() {
 
     const categories = ['All', 'Stocks', 'Crypto', 'Economy', 'Bonds', 'Personal Finance'];
 
+    const articles = NEWS_ARTICLES || [];
+
     let filteredNav = activeCategory === 'All'
-        ? NEWS_ARTICLES
-        : NEWS_ARTICLES.filter(a => a.category === activeCategory);
+        ? articles
+        : articles.filter(a => a?.category === activeCategory);
 
     // Let's assume dailyNewsDate filtering just visually means taking a slice of 2 articles
     // based on the day of the year so it feels pseudo-random daily.
     const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-    const startIndex = (dayOfYear * 2) % NEWS_ARTICLES.length;
-    filteredNav = filteredNav.slice(startIndex, startIndex + 2);
-    if (filteredNav.length < 2) {
-        filteredNav = [...filteredNav, ...NEWS_ARTICLES.slice(0, 2 - filteredNav.length)];
+    if (articles.length > 0) {
+        const startIndex = (dayOfYear * 2) % articles.length;
+        filteredNav = filteredNav.slice(startIndex, startIndex + 2);
+        if (filteredNav.length < 2) {
+            filteredNav = [...filteredNav, ...articles.slice(0, 2 - filteredNav.length)];
+        }
     }
 
     const handleRead = (article) => {
@@ -95,15 +102,13 @@ export default function News() {
                 }
 
                 // Add coins
-                if (!uUpdated.coinsHistory) uUpdated.coinsHistory = [];
-                uUpdated.coinsHistory.push({ source: `News Quiz: ${activeArticle.headline}`, amount: 10, date: new Date().toISOString() });
-                uUpdated.coins = (uUpdated.coins || 0) + 10;
-                earnedCoins = true;
+                awardCoins(10, `News Quiz: ${activeArticle.headline}`);
+                const uUpdatedCoins = getUser(); // Get the freshly saved coins array
 
-                uUpdated.dailyNewsCompleted = (uUpdated.dailyNewsCompleted || 0) + 1;
+                uUpdatedCoins.dailyNewsCompleted = (uUpdatedCoins.dailyNewsCompleted || 0) + 1;
 
-                saveUser(uUpdated);
-                setUser(uUpdated);
+                saveUser(uUpdatedCoins);
+                setUser(uUpdatedCoins);
             }
 
             setQuizState(prev => ({ ...prev, phase: 'complete', extendedStreak: extendedStreakLocal, earnedCoins }));

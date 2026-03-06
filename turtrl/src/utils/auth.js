@@ -1,13 +1,25 @@
 const PREFIX = 'turtrl_';
 
-export const getUser = () => {
-    const data = localStorage.getItem(`${PREFIX}user`);
-    return data ? JSON.parse(data) : null;
-};
+export function getUser() {
+    try {
+        const raw = localStorage.getItem(`${PREFIX}user`);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch (e) {
+        console.error('getUser parse error:', e);
+        localStorage.removeItem(`${PREFIX}user`);
+        return null;
+    }
+}
 
-export const saveUser = (data) => {
-    localStorage.setItem(`${PREFIX}user`, JSON.stringify(data));
-};
+export function saveUser(data) {
+    try {
+        if (!data) return;
+        localStorage.setItem(`${PREFIX}user`, JSON.stringify(data));
+    } catch (e) {
+        console.error('saveUser error:', e);
+    }
+}
 
 export const isLoggedIn = () => {
     return !!getUser();
@@ -18,12 +30,41 @@ export const isOnboarded = () => {
     return user && user.monthlySavings > 0 && user.level !== null;
 };
 
-export const updateUser = (fields) => {
-    const user = getUser() || {};
-    const updated = { ...user, ...fields };
-    saveUser(updated);
-    return updated;
-};
+export function updateUser(fields) {
+    try {
+        const user = getUser();
+        if (!user) return null;
+        const updated = { ...user, ...fields };
+        saveUser(updated);
+        return updated;
+    } catch (e) {
+        console.error('updateUser error:', e);
+        return null;
+    }
+}
+
+export function awardCoins(amount, source) {
+    const user = getUser();
+    if (!user) return;
+
+    user.coins = (user.coins || 0) + amount;
+
+    if (!user.coinsHistory) user.coinsHistory = [];
+
+    user.coinsHistory.unshift({
+        id: Date.now(),
+        source: source,
+        amount: amount,
+        date: new Date().toISOString()
+    });
+
+    if (user.coinsHistory.length > 100) {
+        user.coinsHistory = user.coinsHistory.slice(0, 100);
+    }
+
+    saveUser(user);
+    return user.coins;
+}
 
 export const logout = () => {
     const keysToRemove = [];

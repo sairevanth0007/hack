@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Mascot from './Mascot';
 import ConfettiEffect from './ConfettiEffect';
-import AssetLogo from './AssetLogo';
 import PriceChart from './PriceChart';
-import { getUser, updateUser, unlockBadge } from '../utils/auth';
+import { getUser, updateUser, unlockBadge, awardCoins } from '../utils/auth';
+import { getAsset, MARKET_DATA } from '../utils/marketData';
 import { useDevice } from '../utils/hooks';
 
 export default function StageGame({ stage, onComplete, onClose }) {
     const { isDesktop } = useDevice();
+    if (!stage || !stage.type) return null;
     const [phase, setPhase] = useState('play'); // 'play', 'simulating', 'result', 'bankrupt'
 
     // Quiz State
@@ -21,7 +22,7 @@ export default function StageGame({ stage, onComplete, onClose }) {
     // Decision State
     const [decisionOutcome, setDecisionOutcome] = useState(null);
 
-    const user = getUser();
+    const [user, setUser] = useState(getUser());
     const balance = user?.virtualBalance || 0;
 
     // Cleanup on unmount if needed
@@ -94,7 +95,10 @@ export default function StageGame({ stage, onComplete, onClose }) {
     };
 
     const finishStage = (pointsToAward, tradeData = null) => {
-        let updates = { coins: user.coins + pointsToAward };
+        if (typeof awardCoins === 'function') {
+            awardCoins(pointsToAward, `Stage ${stage.id}: ${stage.title}`);
+        }
+        let updates = {};
 
         if (tradeData) {
             updates.virtualBalance = tradeData.newBalance;
@@ -113,11 +117,14 @@ export default function StageGame({ stage, onComplete, onClose }) {
         }
 
         if (decisionOutcome && decisionOutcome.pointBonus) {
-            updates.coins += decisionOutcome.pointBonus;
+            if (typeof awardCoins === 'function') {
+                awardCoins(decisionOutcome.pointBonus, `Bonus: ${stage.title} — ${decisionOutcome.text.slice(0, 30)}`);
+            }
         }
 
         // Complete stage list tracking is handled by the parent component or when returning
         updateUser(updates);
+        setUser(getUser()); // Refresh user state after update
         setPhase('result_end'); // Show generic completion for a bit
     };
 
@@ -192,6 +199,7 @@ export default function StageGame({ stage, onComplete, onClose }) {
 
                     <button className="btn-primary" onClick={() => {
                         updateUser({ virtualBalance: 10000 });
+                        setUser(getUser()); // Refresh user state after update
                         unlockBadge('bankrupt_survivor');
                         onClose(); // Close without saving stage completion, or reset chapter
                     }}>
@@ -242,6 +250,21 @@ export default function StageGame({ stage, onComplete, onClose }) {
             </div>
         );
     }
+
+    const renderActionButton = () => {
+        // This function is not fully defined in the provided snippet,
+        // but it's used in the decision stage.
+        // Assuming it would render a button based on the current state.
+        // For now, we'll render a placeholder or the original button.
+        if (decisionOutcome) {
+            return (
+                <button className="btn-primary" onClick={() => finishStage(50)}>
+                    Continue →
+                </button>
+            );
+        }
+        return null;
+    };
 
     return (
         <div style={getContainerStyle()}>
@@ -318,75 +341,105 @@ export default function StageGame({ stage, onComplete, onClose }) {
                 )}
 
                 {/* TRADE */}
-                {stage.type === 'trade' && (
-                    <>
-                        <div className="card" style={{ background: 'var(--green-dim)', borderColor: 'var(--green)', display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '24px' }}>
-                            <div style={{ fontSize: '20px' }}>💡</div>
-                            <div style={{ fontSize: '13px', lineHeight: 1.5 }}>{stage.lesson}</div>
-                        </div>
+                {stage.type === 'trade' && (() => {
+                    const symbol = stage?.asset?.symbol;
+                    const assetData = symbol ? getAsset(symbol) : null;
 
-                        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div style={{ marginBottom: '12px' }}>
-                                <AssetLogo symbol={stage.asset.symbol || (stage.realData && stage.realData.symbol)} size={40} />
-                            </div>
-                            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '20px', margin: '0 0 8px 0' }}>{stage.asset.name}</h2>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <span className="pill" style={{ letterSpacing: '1px', textTransform: 'uppercase', fontSize: '10px', padding: '4px 10px' }}>{stage.asset.type}</span>
-                                <span className="pill" style={{
-                                    borderColor: stage.asset.riskLevel === 'very high' ? 'var(--red)' : stage.asset.riskLevel === 'high' ? 'var(--orange)' : stage.asset.riskLevel === 'medium' ? 'var(--gold)' : 'var(--green)',
-                                    color: stage.asset.riskLevel === 'very high' ? 'var(--red)' : stage.asset.riskLevel === 'high' ? 'var(--orange)' : stage.asset.riskLevel === 'medium' ? 'var(--gold)' : 'var(--green)',
-                                    fontSize: '10px', padding: '4px 10px', textTransform: 'capitalize'
+                    // Debug: log what we got
+                    console.log('Stage asset symbol:', symbol);
+                    console.log('Asset data found:', assetData ? 'YES' : 'NO');
+                    console.log('Available symbols:', Object.keys(MARKET_DATA));
+
+                    if (!assetData) {
+                        return (
+                            <div style={{
+                                padding: '20px',
+                                background: 'var(--card)',
+                                borderRadius: '16px',
+                                border: '1px solid var(--border)',
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '32px', marginBottom: '8px' }}>📊</div>
+                                <div style={{
+                                    fontFamily: 'Syne, sans-serif',
+                                    fontSize: '16px', fontWeight: '700',
+                                    marginBottom: '6px'
                                 }}>
-                                    {stage.asset.riskLevel} Risk
-                                </span>
+                                    Loading asset data...
+                                </div>
+                                <div style={{
+                                    fontSize: '11px', color: 'var(--muted)',
+                                    fontFamily: 'monospace'
+                                }}>
+                                    Symbol: {symbol || 'undefined'}
+                                </div>
+                            </div>
+                        );
+                    }
+                    return (
+                        <>
+                            <div className="card" style={{ background: 'var(--green-dim)', borderColor: 'var(--green)', display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '24px' }}>
+                                <div style={{ fontSize: '20px' }}>💡</div>
+                                <div style={{ fontSize: '13px', lineHeight: 1.5 }}>{stage.lesson}</div>
                             </div>
 
-                            <div style={{ fontSize: '32px', fontWeight: 800, margin: '20px 0 16px' }}>
-                                €{stage.asset.mockPrice.toFixed(2)}
+                            <div className="card" style={{ display: 'flex', flexDirection: 'column', width: '100%', padding: '16px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <AssetLogo symbol={stage.asset.symbol || (stage.realData && stage.realData.symbol)} size={36} />
+                                        <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', fontWeight: 700 }}>{stage.asset.name}</div>
+                                        <span className="pill" style={{ letterSpacing: '1px', textTransform: 'uppercase', fontSize: '10px', padding: '2px 8px' }}>{stage.asset.type}</span>
+                                    </div>
+                                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', fontWeight: 700 }}>
+                                        €{stage.asset.mockPrice.toFixed(2)}
+                                    </div>
+                                </div>
+
+                                <div style={{ width: '100%', height: '1px', background: 'var(--border)', marginBottom: '16px' }} />
+
+                                <PriceChart symbol={stage.asset.symbol || (stage.realData && stage.realData.symbol)} height={180} showLabels={true} />
                             </div>
 
-                            <PriceChart symbol={stage.asset.symbol || (stage.realData && stage.realData.symbol)} height={140} showLabels={true} animated={true} />
-                        </div>
+                            <div style={{ marginTop: '24px' }}>
+                                <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>How much to invest?</label>
+                                <div style={{ position: 'relative' }}>
+                                    <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 800, color: 'var(--text)' }}>€</span>
+                                    <input
+                                        type="number"
+                                        className="input-field"
+                                        style={{ paddingLeft: '32px', paddingRight: '60px' }}
+                                        value={investedAmount}
+                                        onChange={e => setInvestedAmount(e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                    <button
+                                        onClick={() => setInvestedAmount(balance.toString())}
+                                        style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--green)', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                        MAX
+                                    </button>
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '6px' }}>
+                                    Available: €{balance.toLocaleString()}
+                                </div>
+                            </div>
 
-                        <div style={{ marginTop: '24px' }}>
-                            <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>How much to invest?</label>
-                            <div style={{ position: 'relative' }}>
-                                <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: 800, color: 'var(--text)' }}>€</span>
-                                <input
-                                    type="number"
-                                    className="input-field"
-                                    style={{ paddingLeft: '32px', paddingRight: '60px' }}
-                                    value={investedAmount}
-                                    onChange={e => setInvestedAmount(e.target.value)}
-                                    placeholder="0.00"
-                                />
+                            <div style={{ marginTop: 'auto', paddingTop: '24px', paddingBottom: '24px' }}>
                                 <button
-                                    onClick={() => setInvestedAmount(balance.toString())}
-                                    style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--green)', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                                    className="btn-primary"
+                                    disabled={!investedAmount || parseFloat(investedAmount) < 100 || parseFloat(investedAmount) > balance}
+                                    onClick={handleTrade}
+                                    style={{ opacity: (!investedAmount || parseFloat(investedAmount) < 100 || parseFloat(investedAmount) > balance) ? 0.5 : 1 }}
                                 >
-                                    MAX
+                                    Invest Virtual Money
                                 </button>
+                                {investedAmount && parseFloat(investedAmount) < 100 && (
+                                    <div style={{ textAlign: 'center', color: 'var(--red)', fontSize: '12px', marginTop: '8px' }}>Minimum investment is €100</div>
+                                )}
                             </div>
-                            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '6px' }}>
-                                Available: €{balance.toLocaleString()}
-                            </div>
-                        </div>
-
-                        <div style={{ marginTop: 'auto', paddingTop: '24px', paddingBottom: '24px' }}>
-                            <button
-                                className="btn-primary"
-                                disabled={!investedAmount || parseFloat(investedAmount) < 100 || parseFloat(investedAmount) > balance}
-                                onClick={handleTrade}
-                                style={{ opacity: (!investedAmount || parseFloat(investedAmount) < 100 || parseFloat(investedAmount) > balance) ? 0.5 : 1 }}
-                            >
-                                Invest Virtual Money
-                            </button>
-                            {investedAmount && parseFloat(investedAmount) < 100 && (
-                                <div style={{ textAlign: 'center', color: 'var(--red)', fontSize: '12px', marginTop: '8px' }}>Minimum investment is €100</div>
-                            )}
-                        </div>
-                    </>
-                )}
+                        </>
+                    );
+                })()}
 
                 {/* DECISION */}
                 {stage.type === 'decision' && (
@@ -426,11 +479,7 @@ export default function StageGame({ stage, onComplete, onClose }) {
                         )}
 
                         <div style={{ marginTop: 'auto', paddingTop: '24px', paddingBottom: '24px' }}>
-                            {decisionOutcome && (
-                                <button className="btn-primary" onClick={() => finishStage(50)}>
-                                    Continue →
-                                </button>
-                            )}
+                            {renderActionButton()}
                         </div>
                     </>
                 )}

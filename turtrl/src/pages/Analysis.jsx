@@ -19,9 +19,12 @@ export default function Analysis() {
 
     const navigate = useNavigate();
     const user = getUser();
-    if (!user) return null;
+    if (!user) {
+        navigate('/');
+        return null;
+    }
 
-    const tradeHistory = user.tradeHistory || [];
+    const tradeHistory = user?.tradeHistory || [];
 
     const handlePost = () => {
         if (!postInput.trim()) return;

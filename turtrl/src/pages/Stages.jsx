@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import TopNav from '../components/TopNav';
 import BottomNav from '../components/BottomNav';
 import BottomSheet from '../components/BottomSheet';
@@ -10,28 +11,88 @@ import { STAGES } from '../utils/stagesData';
 import { useDevice } from '../utils/hooks';
 
 export default function Stages() {
+    // 1. hooks first
     const { isDesktop } = useDevice();
-    const [user, setUser] = useState(null);
+    const navigate = useNavigate();
+    const [nodePositions, setNodePositions] = useState([]);
     const [activeStage, setActiveStage] = useState(null); // The stage object user clicked to play
     const [sheetContent, setSheetContent] = useState(null); // { type: 'locked'|'completed', stage }
     const [feedbackPopup, setFeedbackPopup] = useState(false);
+    const pathContainerRef = useRef(null);
+    const nodeRefs = useRef({});
 
-    const loadData = () => {
-        setUser(getUser());
-        // Could check streak on load just in case, but usually handled by news or daily check
-        checkAndUpdateStreak();
-    };
+    // 2. user data
+    const user = getUser();
+    if (!user) {
+        navigate('/');
+        return null;
+    }
 
-    useEffect(() => {
-        loadData();
-        window.addEventListener('storage', loadData);
-        return () => window.removeEventListener('storage', loadData);
-    }, []);
-
-    if (!user) return null;
-
-    const currentStageId = user.currentStage;
+    const currentStageId = user.currentStage || 1;
     const completedStageIds = user.completedStages || [];
+    const virtualBalance = user.virtualBalance || 10000;
+    const coins = user.coins || 0;
+
+    // 3. STAGES guard
+    if (!STAGES || !Array.isArray(STAGES) || STAGES.length === 0) {
+        return (
+            <div style={{ padding: '80px 20px', textAlign: 'center', color: '#8B949E' }}>
+                Loading stages...
+            </div>
+        );
+    }
+
+    // 4. chaptersMap MUST be here before any JSX or callbacks
+    const chaptersMap = STAGES.reduce((acc, stage) => {
+        const ch = stage.chapterNumber;
+        if (!acc[ch]) {
+            acc[ch] = {
+                number: ch,
+                title: stage.chapter,
+                stages: []
+            };
+        }
+        acc[ch].stages.push(stage);
+        return acc;
+    }, {});
+
+    const chapters = Object.values(chaptersMap).sort((a, b) => a.number - b.number);
+
+    // 5. everything else below...
+    useEffect(() => {
+        const recalculate = () => {
+            try {
+                if (!pathContainerRef.current) return;
+                const containerRect = pathContainerRef.current.getBoundingClientRect();
+                const positions = [];
+                Object.entries(nodeRefs.current).forEach(([id, el]) => {
+                    if (!el) return;
+                    try {
+                        const rect = el.getBoundingClientRect();
+                        positions.push({
+                            id: Number(id),
+                            x: rect.left - containerRect.left + rect.width / 2,
+                            y: rect.top - containerRect.top + rect.height / 2
+                        });
+                    } catch (e) {
+                        console.warn('Node ref error', id, e);
+                    }
+                });
+                positions.sort((a, b) => a.id - b.id);
+                setNodePositions(positions);
+            } catch (e) {
+                console.error('Stage position calculation error:', e);
+            }
+        };
+
+        // Delay to ensure DOM is painted
+        const timer = setTimeout(recalculate, 100);
+        window.addEventListener('resize', recalculate);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', recalculate);
+        };
+    }, [activeStage, sheetContent, isDesktop, chapters.length]);
 
     const handleNodeClick = (stage) => {
         if (completedStageIds.includes(stage.id)) {
@@ -54,7 +115,6 @@ export default function Stages() {
         });
 
         setActiveStage(null);
-        loadData();
 
         // Random 1 in 4 chance for feedback popup
         if (Math.random() < 0.25) {
@@ -74,19 +134,8 @@ export default function Stages() {
                 currentStage: newCurrent
             });
             setSheetContent(null);
-            loadData();
         }
     };
-
-    // Group STAGES by chapter
-    const chaptersMap = new Map();
-    STAGES.forEach(s => {
-        if (!chaptersMap.has(s.chapterNumber)) {
-            chaptersMap.set(s.chapterNumber, { name: s.chapter, stages: [] });
-        }
-        chaptersMap.get(s.chapterNumber).stages.push(s);
-    });
-    const chapters = Array.from(chaptersMap.entries()).map(([num, data]) => ({ num, ...data }));
 
     // Helper for UI
     const getLevelColor = () => {
@@ -176,18 +225,59 @@ export default function Stages() {
     const mapContent = (
         <>
             {/* WINDING PATH */}
-            <div style={{ position: 'relative', padding: isDesktop ? '20px 0 60px' : '40px 0 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowX: 'hidden' }}>
+            <div ref={pathContainerRef} style={{ position: 'relative', padding: isDesktop ? '20px 0 60px' : '40px 0 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowX: 'hidden' }}>
 
                 {/* Mascot at top */}
-                <Mascot size={isDesktop ? 160 : 130} animation="float" speech={completedStageIds.length === 0 ? "Let's start your journey! 🚀" : completedStageIds.length > 5 ? "You're on fire! 🔥" : "Keep going, you're doing great! 💪"} style={{ marginBottom: '20px' }} />
+                <Mascot size={isDesktop ? 160 : 130} animation="float" speech={completedStageIds.length === 0 ? "Let's start your journey! 🚀" : completedStageIds.length > 5 ? "You're on fire! 🔥" : "Keep going, you're doing great! 💪"} style={{ marginBottom: '20px', zIndex: 1 }} />
 
                 {/* Dynamic SVG Path Background */}
-                <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}>
-                    <path
-                        d="M 50% 200 C 100% 300, 0% 400, 50% 500 C 100% 600, 0% 700, 50% 800 C 100% 900, 0% 1000, 50% 1100 C 100% 1200, 0% 1300, 50% 1400 C 100% 1500, 0% 1600, 50% 1700 C 100% 1800, 0% 1900, 50% 2000 C 100% 2100, 0% 2200, 50% 2300 C 100% 2400, 0% 2500, 50% 2600"
-                        stroke="var(--border)" strokeWidth="4" strokeDasharray="8 8" fill="none"
-                        style={{ vectorEffect: 'non-scaling-stroke' }} // Approximation path since drawing exact DOM-relative paths requires complex measurement.
-                    />
+                <svg style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0, overflow: 'visible' }}>
+                    <defs>
+                        <linearGradient id="progressGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="var(--green)" />
+                            <stop offset="100%" stopColor="var(--gold)" />
+                        </linearGradient>
+                    </defs>
+                    {nodePositions.length >= 2 && (() => {
+                        const paths = [];
+                        for (let i = 0; i < nodePositions.length - 1; i++) {
+                            const A = nodePositions[i];
+                            const B = nodePositions[i + 1];
+                            if (!A || !B) continue;
+                            const midY = (A.y + B.y) / 2;
+                            const pathD = `M ${A.x} ${A.y} C ${A.x} ${midY}, ${B.x} ${midY}, ${B.x} ${B.y}`;
+
+                            const isACompleted = completedStageIds.includes(A.id);
+                            const isBCompleted = completedStageIds.includes(B.id);
+
+                            let strokeColor = "var(--border)";
+                            let strokeDash = "6 5";
+                            let opacity = 1;
+
+                            if (isACompleted && isBCompleted) {
+                                strokeColor = "var(--green)";
+                                strokeDash = "none";
+                                opacity = 0.5;
+                            } else if (isACompleted && !isBCompleted) {
+                                strokeColor = "url(#progressGrad)";
+                                strokeDash = "none";
+                            }
+
+                            paths.push(
+                                <path
+                                    key={i}
+                                    d={pathD}
+                                    stroke={strokeColor}
+                                    strokeWidth="3"
+                                    strokeDasharray={strokeDash}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    opacity={opacity}
+                                />
+                            );
+                        }
+                        return paths;
+                    })()}
                 </svg>
 
                 {chapters.map((chapter) => {
@@ -232,6 +322,7 @@ export default function Stages() {
                                     return (
                                         <div
                                             key={stage.id}
+                                            ref={el => { if (el) nodeRefs.current[stage.id] = el; }}
                                             onClick={() => handleNodeClick(stage)}
                                             style={{
                                                 zIndex: 2,

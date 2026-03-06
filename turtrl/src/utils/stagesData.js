@@ -8,7 +8,7 @@ export const STAGES = [
         icon: "📈",
         description: "The benchmark index for the German equity market.",
         unlockedByDefault: true,
-        asset: { name: "DAX", type: "Index", mockPrice: 16000, riskLevel: "medium" },
+        asset: { name: "DAX", symbol: "EXIA.DE", type: "Index", mockPrice: 16000, riskLevel: "medium" },
         realData: {
             yearlyReturn2023: "+20.3%",
             yearlyReturn2024: "+10.4%",
@@ -26,7 +26,7 @@ export const STAGES = [
         icon: "🚗",
         description: "One of the world's leading automobile manufacturers.",
         unlockedByDefault: true,
-        asset: { name: "VW Stock", type: "Stock", mockPrice: 120, riskLevel: "high" },
+        asset: { name: "VW Stock", symbol: "VOW3.DE", type: "Stock", mockPrice: 120, riskLevel: "high" },
         realData: {
             yearlyReturn2023: "-4.5%",
             yearlyReturn2024: "-12.0%",
@@ -44,7 +44,7 @@ export const STAGES = [
         icon: "🏭",
         description: "A multinational conglomerate focusing on industrial digitalization.",
         unlockedByDefault: true,
-        asset: { name: "Siemens Stock", type: "Stock", mockPrice: 140, riskLevel: "medium" },
+        asset: { name: "Siemens Stock", symbol: "SIE.DE", type: "Stock", mockPrice: 140, riskLevel: "medium" },
         realData: {
             yearlyReturn2023: "+30.1%",
             yearlyReturn2024: "+15.2%",
@@ -62,7 +62,7 @@ export const STAGES = [
         icon: "☁️",
         description: "A global leader in enterprise software.",
         unlockedByDefault: true,
-        asset: { name: "SAP Stock", type: "Stock", mockPrice: 130, riskLevel: "medium" },
+        asset: { name: "SAP Stock", symbol: "SAP.DE", type: "Stock", mockPrice: 130, riskLevel: "medium" },
         realData: {
             yearlyReturn2023: "+45.0%",
             yearlyReturn2024: "+25.5%",
@@ -80,7 +80,7 @@ export const STAGES = [
         icon: "🛡",
         description: "One of the world's largest financial services companies.",
         unlockedByDefault: true,
-        asset: { name: "Allianz Stock", type: "Stock", mockPrice: 220, riskLevel: "medium" },
+        asset: { name: "Allianz Stock", symbol: "ALV.DE", type: "Stock", mockPrice: 220, riskLevel: "medium" },
         realData: {
             yearlyReturn2023: "+15.8%",
             yearlyReturn2024: "+8.5%",
@@ -129,7 +129,7 @@ export const STAGES = [
         type: 'trade',
         icon: "🌍",
         description: "Broad global equity exposure.",
-        asset: { name: "MSCI World ETF", type: "ETF", mockPrice: 85, riskLevel: "medium" },
+        asset: { name: "MSCI World ETF", symbol: "VWCE.DE", type: "ETF", mockPrice: 85, riskLevel: "medium" },
         realData: {
             yearlyReturn2023: "+21.8%",
             yearlyReturn2024: "+12.1%",
@@ -146,7 +146,7 @@ export const STAGES = [
         type: 'trade',
         icon: "📦",
         description: "An ETF tracking the DAX index.",
-        asset: { name: "iShares Core DAX", type: "ETF", mockPrice: 130, riskLevel: "medium" },
+        asset: { name: "iShares Core DAX", symbol: "EXIA.DE", type: "ETF", mockPrice: 130, riskLevel: "medium" },
         realData: {
             yearlyReturn2023: "+20.1%",
             yearlyReturn2024: "+10.2%",
@@ -163,7 +163,7 @@ export const STAGES = [
         type: 'trade',
         icon: "₿",
         description: "The original cryptocurrency.",
-        asset: { name: "Bitcoin (BTC)", type: "Crypto", mockPrice: 40000, riskLevel: "very high" },
+        asset: { name: "Bitcoin (BTC)", symbol: "BTC-EUR", type: "Crypto", mockPrice: 40000, riskLevel: "very high" },
         realData: {
             yearlyReturn2023: "+155.0%",
             yearlyReturn2024: "+45.0%",
@@ -180,7 +180,7 @@ export const STAGES = [
         type: 'trade',
         icon: "🏛",
         description: "Lend money to the German government.",
-        asset: { name: "German Bund", type: "Bond", mockPrice: 100, riskLevel: "low" },
+        asset: { name: "German Bund", symbol: "BUND-10Y", type: "Bond", mockPrice: 100, riskLevel: "low" },
         realData: {
             yearlyReturn2023: "+2.5%",
             yearlyReturn2024: "+2.8%",

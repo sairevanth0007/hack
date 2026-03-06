@@ -407,7 +407,16 @@ export const MARKET_DATA = {
 }
 
 export function getAsset(symbol) {
-    return MARKET_DATA[symbol] || null
+    if (!symbol) {
+        console.warn('getAsset called with no symbol')
+        return null
+    }
+    const asset = MARKET_DATA[symbol]
+    if (!asset) {
+        console.warn('getAsset: symbol not found:', symbol,
+            'Available:', Object.keys(MARKET_DATA))
+    }
+    return asset || null
 }
 
 export function getAllAssets() {
