@@ -12,6 +12,7 @@ export default function StreakPage() {
             navigate('/');
             return;
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(u);
     }, [navigate]);
 

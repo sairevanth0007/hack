@@ -20,6 +20,7 @@ export default function CoinsPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         refresh()
         window.addEventListener('focus', refresh)
         document.addEventListener('visibilitychange', refresh)
@@ -27,6 +28,7 @@ export default function CoinsPage() {
             window.removeEventListener('focus', refresh)
             document.removeEventListener('visibilitychange', refresh)
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const formatDate = (iso) => {

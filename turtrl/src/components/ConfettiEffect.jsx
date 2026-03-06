@@ -11,16 +11,20 @@ export default function ConfettiEffect({ active }) {
         }
     }, [active]);
 
-    const particles = useMemo(() => {
-        const colors = ['#2ECC71', '#F4C430', '#7C3AED', '#FF6B35', '#E74C3C', '#FFFFFF'];
-        return Array.from({ length: 40 }).map((_, i) => ({
-            id: i,
-            left: Math.random() * 100,
-            delay: Math.random() * 1.5,
-            duration: 1.5 + Math.random() * 1.5,
-            color: colors[Math.floor(Math.random() * colors.length)]
-        }));
-    }, [active]); // Recalculate positions each time it is activated
+    const [particles, setParticles] = useState([]);
+
+    useEffect(() => {
+        if (active) {
+            const colors = ['#2ECC71', '#F4C430', '#7C3AED', '#FF6B35', '#E74C3C', '#FFFFFF'];
+            setParticles(Array.from({ length: 40 }).map((_, i) => ({
+                id: i,
+                left: Math.random() * 100,
+                delay: Math.random() * 1.5,
+                duration: 1.5 + Math.random() * 1.5,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            })));
+        }
+    }, [active]);
 
     if (!show && !active) return null;
 

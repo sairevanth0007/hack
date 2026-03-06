@@ -10,9 +10,10 @@ export default function TopNav() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
-    const { isMobile, isTablet, isDesktop } = useDevice();
+    const { isMobile, isDesktop } = useDevice();
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(getUser());
         const handleStorage = () => setUser(getUser());
         window.addEventListener('storage', handleStorage);

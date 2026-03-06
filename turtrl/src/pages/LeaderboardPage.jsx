@@ -14,6 +14,7 @@ export default function LeaderboardPage() {
             navigate('/');
             return;
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentUser(loggedInUser);
 
         const getAllUsers = () => {
@@ -25,13 +26,13 @@ export default function LeaderboardPage() {
                         try {
                             const val = localStorage.getItem(key);
                             if (val) usersList.push(JSON.parse(val));
-                        } catch (e) {
+                        } catch (error) {
                             // skip malformed entry
                         }
                     }
                 }
                 return usersList;
-            } catch (e) {
+            } catch (error) {
                 return [];
             }
         };
@@ -57,6 +58,7 @@ export default function LeaderboardPage() {
         });
 
         setAllUsers(uniqueUsers);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     if (!currentUser) return null;
@@ -212,5 +214,6 @@ export default function LeaderboardPage() {
                     })}
                 </div>
             </div>
-            );
+        </div>
+    );
 }

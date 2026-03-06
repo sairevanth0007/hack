@@ -8,7 +8,6 @@ import { useDevice } from '../utils/hooks';
 
 export default function StageGame({ stage, onComplete, onClose }) {
     const { isDesktop } = useDevice();
-    if (!stage || !stage.type) return null;
     const [phase, setPhase] = useState('play'); // 'play', 'simulating', 'result', 'bankrupt'
 
     // Quiz State
@@ -23,14 +22,16 @@ export default function StageGame({ stage, onComplete, onClose }) {
     const [decisionOutcome, setDecisionOutcome] = useState(null);
 
     const [user, setUser] = useState(getUser());
-    const balance = user?.virtualBalance || 0;
 
     // Cleanup on unmount if needed
     useEffect(() => {
         return () => {
             setPhase('play');
         };
-    }, [stage.id]);
+    }, [stage?.id]);
+
+    if (!stage || !stage.type) return null;
+    const balance = user?.virtualBalance || 0;
 
     const handleBack = () => {
         if (window.confirm("Quit this stage? Progress will be lost.")) {

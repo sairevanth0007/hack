@@ -4,6 +4,8 @@ import { getUser } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
 import mascotImg from '../images/mascot.png';
 
+let nextMessageId = 1000;
+
 export default function FloatingAIChat() {
     const { isDesktop } = useDevice();
     const [isOpen, setIsOpen] = useState(false);
@@ -36,7 +38,7 @@ export default function FloatingAIChat() {
         const text = textOverride || inputText;
         if (!text.trim()) return;
 
-        const newMessages = [...messages, { id: Date.now(), sender: 'user', text }];
+        const newMessages = [...messages, { id: nextMessageId++, sender: 'user', text }];
         setMessages(newMessages);
         setInputText('');
         setIsTyping(true);
@@ -58,7 +60,7 @@ export default function FloatingAIChat() {
                 response = `You're on a ${user.streak}-day streak! Complete a news quiz daily to keep it going 🔥`;
             }
 
-            setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: response }]);
+            setMessages(prev => [...prev, { id: nextMessageId++, sender: 'ai', text: response }]);
         }, 1500);
     };
 

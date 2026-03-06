@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Mascot from '../components/Mascot';
-import { getUser, updateUser, unlockBadge } from '../utils/auth';
+import { updateUser, unlockBadge } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
 
 export default function Onboarding() {

@@ -4,7 +4,7 @@ import { useDevice } from '../utils/hooks';
 import { getUser, logout } from '../utils/auth';
 
 export default function Sidebar() {
-    const { isMobile, isTablet, isDesktop } = useDevice();
+    const { isMobile, isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
     const user = getUser();

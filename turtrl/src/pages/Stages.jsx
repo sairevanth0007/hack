@@ -6,7 +6,7 @@ import BottomSheet from '../components/BottomSheet';
 import StageGame from '../components/StageGame';
 import Mascot from '../components/Mascot';
 import AssetLogo from '../components/AssetLogo';
-import { getUser, updateUser, checkAndUpdateStreak } from '../utils/auth';
+import { getUser, updateUser } from '../utils/auth';
 import { STAGES } from '../utils/stagesData';
 import { useDevice } from '../utils/hooks';
 
@@ -21,29 +21,18 @@ export default function Stages() {
     const pathContainerRef = useRef(null);
     const nodeRefs = useRef({});
 
-    // 2. user data
+    useEffect(() => {
+        if (!getUser()) {
+            navigate('/');
+        }
+    }, [navigate]);
+
     const user = getUser();
-    if (!user) {
-        navigate('/');
-        return null;
-    }
-
-    const currentStageId = user.currentStage || 1;
-    const completedStageIds = user.completedStages || [];
-    const virtualBalance = user.virtualBalance || 10000;
-    const coins = user.coins || 0;
-
-    // 3. STAGES guard
-    if (!STAGES || !Array.isArray(STAGES) || STAGES.length === 0) {
-        return (
-            <div style={{ padding: '80px 20px', textAlign: 'center', color: '#8B949E' }}>
-                Loading stages...
-            </div>
-        );
-    }
+    const currentStageId = user?.currentStage || 1;
+    const completedStageIds = user?.completedStages || [];
 
     // 4. chaptersMap MUST be here before any JSX or callbacks
-    const chaptersMap = STAGES.reduce((acc, stage) => {
+    const chaptersMap = (STAGES || []).reduce((acc, stage) => {
         const ch = stage.chapterNumber;
         if (!acc[ch]) {
             acc[ch] = {
@@ -93,6 +82,8 @@ export default function Stages() {
             window.removeEventListener('resize', recalculate);
         };
     }, [activeStage, sheetContent, isDesktop, chapters.length]);
+
+    if (!user) return null;
 
     const handleNodeClick = (stage) => {
         if (completedStageIds.includes(stage.id)) {

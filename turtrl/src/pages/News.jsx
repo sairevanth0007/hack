@@ -28,6 +28,7 @@ export default function News() {
             saveUser(u);
             u = getUser();
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setUser(u);
     }, [navigate]);
 

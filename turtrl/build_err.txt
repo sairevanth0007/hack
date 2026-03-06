@@ -1,0 +1,29 @@
+
+> turtrl@0.0.0 build
+> vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 14 modules transformed.
+Γ£ù Build failed in 3.57s
+error during build:
+[vite:esbuild] Transform failed with 1 error:
+F:/Project/Hackation/hack/turtrl/src/pages/LeaderboardPage.jsx:217:0: ERROR: Unexpected end of file before a closing "div" tag
+file: F:/Project/Hackation/hack/turtrl/src/pages/LeaderboardPage.jsx:217:0
+
+Unexpected end of file before a closing "div" tag
+215 |              );
+216 |  }
+217 |  
+    |  ^
+
+    at failureErrorWithLog (F:\Project\Hackation\hack\turtrl\node_modules\esbuild\lib\main.js:1467:15)
+    at F:\Project\Hackation\hack\turtrl\node_modules\esbuild\lib\main.js:736:50
+    at responseCallbacks.<computed> (F:\Project\Hackation\hack\turtrl\node_modules\esbuild\lib\main.js:603:9)
+    at handleIncomingPacket (F:\Project\Hackation\hack\turtrl\node_modules\esbuild\lib\main.js:658:12)
+    at Socket.readFromStdout (F:\Project\Hackation\hack\turtrl\node_modules\esbuild\lib\main.js:581:7)
+    at Socket.emit (node:events:508:20)
+    at addChunk (node:internal/streams/readable:564:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:515:3)
+    at Readable.push (node:internal/streams/readable:395:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
