@@ -4,24 +4,52 @@ import BottomNav from '../components/BottomNav';
 import Mascot from '../components/Mascot';
 import ConfettiEffect from '../components/ConfettiEffect';
 import { NEWS_ARTICLES } from '../utils/newsData';
-import { checkAndUpdateStreak } from '../utils/auth';
+import { checkAndUpdateStreak, getUser, saveUser } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
 
 export default function News() {
     const { isDesktop } = useDevice();
+    const [user, setUser] = useState(null);
     const [activeCategory, setActiveCategory] = useState('All');
     const [activeArticle, setActiveArticle] = useState(null); // the article being read/quizzed
-    const [quizState, setQuizState] = useState(null); // { phase: 'reading'|'quiz'|'complete', qIndex: 0, correctCount: 0, answered: false, selectedOpt: null }
+    const [quizState, setQuizState] = useState(null); // { phase: 'reading'|'quiz'|'complete', qIndex: 0, correctCount: 0, answered: false, selectedOpt: null, extendedStreak: false }
+
+    useEffect(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        let u = getUser();
+        if (u) {
+            if (u.lastDailyNewsDate !== todayStr) {
+                u.lastDailyNewsDate = todayStr;
+                u.dailyNewsCompleted = 0;
+                saveUser(u);
+                u = getUser();
+            }
+            setUser(u);
+        }
+    }, []);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const streakAlreadyExtended = user && user.lastStreakDate === todayStr;
+    const completedAllToday = user && user.dailyNewsCompleted >= 2;
 
     const categories = ['All', 'Stocks', 'Crypto', 'Economy', 'Bonds', 'Personal Finance'];
 
-    const filteredNav = activeCategory === 'All'
+    let filteredNav = activeCategory === 'All'
         ? NEWS_ARTICLES
         : NEWS_ARTICLES.filter(a => a.category === activeCategory);
 
+    // Let's assume dailyNewsDate filtering just visually means taking a slice of 2 articles
+    // based on the day of the year so it feels pseudo-random daily.
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+    const startIndex = (dayOfYear * 2) % NEWS_ARTICLES.length;
+    filteredNav = filteredNav.slice(startIndex, startIndex + 2);
+    if (filteredNav.length < 2) {
+        filteredNav = [...filteredNav, ...NEWS_ARTICLES.slice(0, 2 - filteredNav.length)];
+    }
+
     const handleRead = (article) => {
         setActiveArticle(article);
-        setQuizState({ phase: 'reading', qIndex: 0, correctCount: 0, answered: false, selectedOpt: null });
+        setQuizState({ phase: 'reading', qIndex: 0, correctCount: 0, answered: false, selectedOpt: null, extendedStreak: false });
     };
 
     const handleQuizStart = () => {
@@ -51,10 +79,34 @@ export default function News() {
         } else {
             // Finished all questions
             const finalCount = quizState.correctCount;
-            if (finalCount === activeArticle.quiz.length) {
+            let extendedStreakLocal = false;
+            let earnedCoins = false;
+
+            // Only if they answered at least 1 question correctly
+            if (finalCount >= 1) {
+                const uCurrent = getUser();
+                const wasAlreadyExtended = uCurrent.lastStreakDate === new Date().toISOString().split('T')[0];
+
                 checkAndUpdateStreak();
+
+                const uUpdated = getUser();
+                if (!wasAlreadyExtended && uUpdated.lastStreakDate === new Date().toISOString().split('T')[0]) {
+                    extendedStreakLocal = true;
+                }
+
+                // Add coins
+                if (!uUpdated.coinsHistory) uUpdated.coinsHistory = [];
+                uUpdated.coinsHistory.push({ source: `News Quiz: ${activeArticle.headline}`, amount: 10, date: new Date().toISOString() });
+                uUpdated.coins = (uUpdated.coins || 0) + 10;
+                earnedCoins = true;
+
+                uUpdated.dailyNewsCompleted = (uUpdated.dailyNewsCompleted || 0) + 1;
+
+                saveUser(uUpdated);
+                setUser(uUpdated);
             }
-            setQuizState(prev => ({ ...prev, phase: 'complete' }));
+
+            setQuizState(prev => ({ ...prev, phase: 'complete', extendedStreak: extendedStreakLocal, earnedCoins }));
         }
     };
 
@@ -69,70 +121,90 @@ export default function News() {
         }
     };
 
-    const renderList = () => (
-        <>
-            {/* HEADER SECTION */}
-            <div style={{ padding: '16px 20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Mascot size={40} animation="none" />
-                <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '22px', margin: 0 }}>Market Pulse 📡</h1>
-            </div>
+    const renderList = () => {
+        if (completedAllToday) {
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '32px', textAlign: 'center', height: isDesktop ? '100%' : 'auto', minHeight: '60vh' }}>
+                    <Mascot size={150} animation="float" />
+                    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '28px', color: 'var(--green)', margin: '24px 0 12px' }}>
+                        You've completed today's news! 🎉
+                    </h2>
+                    <p style={{ fontSize: '18px', color: 'var(--muted)', margin: 0, fontWeight: 600 }}>
+                        <span style={{ color: 'var(--gold)', fontWeight: 800 }}>Streak: {user?.streak || 0} days 🔥</span>
+                        <br />
+                        <span style={{ marginTop: '12px', display: 'block', fontSize: '15px' }}>New articles tomorrow.</span>
+                    </p>
+                </div>
+            );
+        }
 
-            {/* FILTER TABS */}
-            <div style={{ padding: '16px 20px', display: 'flex', gap: '10px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none', flexShrink: 0 }}>
-                {categories.map(cat => (
-                    <button
-                        key={cat}
-                        className={`pill ${activeCategory === cat ? 'active' : ''}`}
-                        onClick={() => setActiveCategory(cat)}
-                        style={{ whiteSpace: 'nowrap' }}
-                    >
-                        {cat}
-                    </button>
-                ))}
-            </div>
+        return (
+            <>
+                {/* HEADER SECTION */}
+                <div style={{ padding: '16px 20px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Mascot size={40} animation="none" />
+                    <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '22px', margin: 0 }}>Market Pulse 📡</h1>
+                </div>
 
-            {/* ARTICLES LIST */}
-            <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', paddingBottom: isDesktop ? '32px' : '0' }}>
-                {filteredNav.map(article => (
-                    <div key={article.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '12px', border: `1px solid ${getPillColor(article.category)}`, color: getPillColor(article.category), background: 'var(--card2)' }}>
-                                {article.category}
-                            </span>
-                            <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{article.timeAgo}</span>
-                        </div>
-
-                        <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', margin: '8px 0 12px' }}>
-                            {article.headline}
-                        </h2>
-
-                        <ul style={{ listStyle: 'none', margin: '0 0 16px 0', padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {article.summary.map((point, idx) => (
-                                <li key={idx} style={{ display: 'flex', gap: '8px', fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>
-                                    <span style={{ color: 'var(--green)', fontSize: '16px', lineHeight: 1 }}>▪</span>
-                                    <span>{point}</span>
-                                </li>
-                            ))}
-                        </ul>
-
-                        <div style={{ fontSize: '12px', color: 'var(--muted)', fontStyle: 'italic', marginBottom: '16px' }}>
-                            — {article.source}
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '10px' }}>
-                            {/* Hidden buttons or alternative interaction for desktop maybe, but we can reuse the same layout */}
-                            <button className="btn-ghost" style={{ flex: 1, padding: '10px' }} onClick={() => { /* Skip logic */ }}>
-                                I know this — Skip →
-                            </button>
-                            <button className="btn-primary" style={{ flex: 1, padding: '10px' }} onClick={() => handleRead(article)}>
-                                Read & Quiz →
-                            </button>
-                        </div>
+                {streakAlreadyExtended && (
+                    <div style={{ background: 'var(--green-dim)', border: '1px solid var(--green)', color: 'var(--green)', padding: '12px', margin: '16px 20px 0', borderRadius: '12px', fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '18px' }}>✅</span> Streak extended today! Come back tomorrow for more.
                     </div>
-                ))}
-            </div>
-        </>
-    );
+                )}
+
+                {/* FILTER TABS */}
+                <div style={{ padding: '16px 20px', display: 'flex', gap: '10px', overflowX: 'auto', msOverflowStyle: 'none', scrollbarWidth: 'none', flexShrink: 0 }}>
+                    {categories.map(cat => (
+                        <button
+                            key={cat}
+                            className={`pill ${activeCategory === cat ? 'active' : ''}`}
+                            onClick={() => setActiveCategory(cat)}
+                            style={{ whiteSpace: 'nowrap' }}
+                        >
+                            {cat}
+                        </button>
+                    ))}
+                </div>
+
+                {/* ARTICLES LIST */}
+                <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', paddingBottom: isDesktop ? '32px' : '0' }}>
+                    {filteredNav.map(article => (
+                        <div key={article.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '12px', border: `1px solid ${getPillColor(article.category)}`, color: getPillColor(article.category), background: 'var(--card2)' }}>
+                                    {article.category}
+                                </span>
+                                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{article.timeAgo}</span>
+                            </div>
+
+                            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '16px', margin: '8px 0 12px' }}>
+                                {article.headline}
+                            </h2>
+
+                            <ul style={{ listStyle: 'none', margin: '0 0 16px 0', padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {article.summary.map((point, idx) => (
+                                    <li key={idx} style={{ display: 'flex', gap: '8px', fontSize: '13px', color: 'var(--muted)', lineHeight: 1.5 }}>
+                                        <span style={{ color: 'var(--green)', fontSize: '16px', lineHeight: 1 }}>▪</span>
+                                        <span>{point}</span>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <div style={{ fontSize: '12px', color: 'var(--muted)', fontStyle: 'italic', marginBottom: '16px' }}>
+                                — {article.source}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button className="btn-primary" style={{ flex: 1, padding: '10px' }} onClick={() => handleRead(article)}>
+                                    Read & Quiz →
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </>
+        );
+    };
 
     const renderArticleContent = () => (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -233,29 +305,37 @@ export default function News() {
 
                 {/* COMPLETE PHASE */}
                 {quizState.phase === 'complete' && (() => {
-                    const allCorrect = quizState.correctCount === activeArticle.quiz.length;
+                    const atLeastOne = quizState.correctCount >= 1;
                     return (
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
-                            {allCorrect && <ConfettiEffect active={true} />}
+                            {atLeastOne && <ConfettiEffect active={true} />}
 
-                            <Mascot size={allCorrect ? 100 : 80} animation={allCorrect ? "popIn" : "bounce"} />
+                            <Mascot size={atLeastOne ? 100 : 80} animation={atLeastOne ? "popIn" : "bounce"} />
 
-                            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '32px', fontWeight: 800, margin: '24px 0 8px', color: allCorrect ? 'var(--green)' : 'var(--text)' }}>
+                            <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '32px', fontWeight: 800, margin: '24px 0 8px', color: atLeastOne ? 'var(--green)' : 'var(--text)' }}>
                                 {quizState.correctCount} / {activeArticle.quiz.length} correct
                             </div>
 
-                            <p style={{ fontSize: '16px', color: allCorrect ? 'var(--green)' : 'var(--muted)', marginBottom: '32px', fontWeight: 600 }}>
-                                {allCorrect ? "Perfect score! 🎉" : "Keep learning!"}
+                            <p style={{ fontSize: '16px', color: atLeastOne ? 'var(--green)' : 'var(--muted)', marginBottom: '32px', fontWeight: 600 }}>
+                                {atLeastOne ? "Great job! 🎉" : "Better luck next time!"}
                             </p>
 
-                            {allCorrect && (
+                            {atLeastOne && (
                                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
-                                    <div className="card" style={{ background: 'var(--gold-dim)', borderColor: 'var(--gold)', color: 'var(--gold)', fontWeight: 700 }}>
-                                        🔥 Streak extended!
-                                    </div>
-                                    <div className="card" style={{ background: 'var(--green-dim)', borderColor: 'var(--green)', color: 'var(--green)', fontWeight: 700 }}>
-                                        +10 XP
-                                    </div>
+                                    {quizState.extendedStreak ? (
+                                        <div className="card" style={{ background: 'var(--gold-dim)', borderColor: 'var(--gold)', color: 'var(--gold)', fontWeight: 700 }}>
+                                            🔥 Streak extended!
+                                        </div>
+                                    ) : (
+                                        <div className="card" style={{ background: 'var(--card2)', borderColor: 'var(--border)', color: 'var(--muted)', fontWeight: 700 }}>
+                                            🎯 Already counted today
+                                        </div>
+                                    )}
+                                    {quizState.earnedCoins && (
+                                        <div className="card" style={{ background: 'var(--green-dim)', borderColor: 'var(--green)', color: 'var(--green)', fontWeight: 700 }}>
+                                            +10 Coins
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

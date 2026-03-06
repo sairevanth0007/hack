@@ -46,58 +46,54 @@ export const unlockBadge = (badgeId) => {
 };
 
 export const checkAndUpdateStreak = () => {
+    const today = new Date().toISOString().split('T')[0];
     const user = getUser();
     if (!user) return user;
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    const lastStr = user.lastStreakDate;
+    const last = user.lastStreakDate;
 
-    if (lastStr === todayStr) {
-        // Already tracked today
-        return user;
+    if (last === today) {
+        return; // Already completed today
     }
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yStr = yesterday.toISOString().split('T')[0];
 
-    let newStreak = user.streak;
-    let newShields = user.streakShields;
-    let newRubies = user.rubies;
-
-    if (lastStr === yesterdayStr) {
-        // Sequential day
-        newStreak += 1;
+    if (last === yStr) {
+        user.streak += 1;
+    } else if (last === null || last === undefined) {
+        user.streak = 1;
     } else {
-        // Missed a day
-        if (newShields > 0 && newStreak > 0) {
-            newShields -= 1;
-            newStreak += 1;
+        if (user.streakShields > 0) {
+            user.streakShields -= 1;
+            user.streak += 1;
         } else {
-            newStreak = 1;
+            user.streak = 1;
         }
     }
 
-    let newBestStreak = user.bestStreak;
-    if (newStreak > newBestStreak) {
-        newBestStreak = newStreak;
+    user.lastStreakDate = today;
+    if (user.streak > user.bestStreak) user.bestStreak = user.streak;
+
+    if (user.streak > 0 && user.streak % 60 === 0) {
+        user.rubies += 1;
+        if (!user.chainsHistory) user.chainsHistory = [];
+        user.chainsHistory.push({ source: '60-day Perfect Streak', amount: 1, date: new Date().toISOString() });
     }
 
-    if (newStreak > 0 && newStreak % 60 === 0) {
-        newRubies += 1;
-    }
+    if (!user.streakHistory) user.streakHistory = [];
+    user.streakHistory.push({ date: today, maintained: true });
 
-    const updated = updateUser({
-        streak: newStreak,
-        bestStreak: newBestStreak,
-        lastStreakDate: todayStr,
-        streakShields: newShields,
-        rubies: newRubies
-    });
+    saveUser(user);
+    return user;
+};
 
-    if (newStreak >= 7) unlockBadge('streak_7');
-    if (newStreak >= 30) unlockBadge('streak_30');
-    if (newRubies >= 1) unlockBadge('first_ruby');
-
-    return updated;
+export const markStreakMissed = () => {
+    const user = getUser();
+    if (!user) return;
+    const today = new Date().toISOString().split('T')[0];
+    if (!user.streakHistory) user.streakHistory = [];
+    user.streakHistory.push({ date: today, maintained: false });
+    saveUser(user);
 };

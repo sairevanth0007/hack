@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Mascot from './Mascot';
 import ConfettiEffect from './ConfettiEffect';
+import AssetLogo from './AssetLogo';
+import PriceChart from './PriceChart';
 import { getUser, updateUser, unlockBadge } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
 
@@ -61,9 +63,18 @@ export default function StageGame({ stage, onComplete, onClose }) {
         setPhase('simulating');
 
         setTimeout(() => {
-            const min = stage.riskRange.minReturn;
-            const max = stage.riskRange.maxReturn;
-            const returnPct = min + Math.random() * (max - min);
+            let baseReturn = 0;
+            if (stage.realData && stage.realData.yearlyReturn2023) {
+                baseReturn = parseFloat(stage.realData.yearlyReturn2023.replace('%', '').replace('+', ''));
+            } else if (stage.riskRange) {
+                const min = stage.riskRange.minReturn;
+                const max = stage.riskRange.maxReturn;
+                baseReturn = min + Math.random() * (max - min);
+            }
+
+            // Personal variance -2% to +2%
+            const variance = (Math.random() * 4) - 2;
+            const returnPct = baseReturn + variance;
             const profit = amount * (returnPct / 100);
             const newBalance = balance + profit;
 
@@ -79,17 +90,18 @@ export default function StageGame({ stage, onComplete, onClose }) {
 
     const handleDecision = (choice) => {
         setDecisionOutcome(choice);
-        // Award bonus points immediately or in a batched update, wait for continue
+        // Award bonus coins immediately or in a batched update, wait for continue
     };
 
     const finishStage = (pointsToAward, tradeData = null) => {
-        let updates = { points: user.points + pointsToAward };
+        let updates = { coins: user.coins + pointsToAward };
 
         if (tradeData) {
             updates.virtualBalance = tradeData.newBalance;
             const history = [...(user.tradeHistory || []), {
                 stageId: stage.id,
                 asset: stage.asset.name,
+                symbol: stage.asset.symbol,
                 invested: tradeData.amount,
                 returnPct: tradeData.returnPct,
                 profit: tradeData.profit,
@@ -101,7 +113,7 @@ export default function StageGame({ stage, onComplete, onClose }) {
         }
 
         if (decisionOutcome && decisionOutcome.pointBonus) {
-            updates.points += decisionOutcome.pointBonus;
+            updates.coins += decisionOutcome.pointBonus;
         }
 
         // Complete stage list tracking is handled by the parent component or when returning
@@ -136,17 +148,29 @@ export default function StageGame({ stage, onComplete, onClose }) {
         return (
             <div style={getContainerStyle()}>
                 <ConfettiEffect active={true} />
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '24px', textAlign: 'center' }}>
                     <Mascot size={150} animation="popIn" />
-                    <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '30px', color: 'var(--green)', margin: '24px 0 8px' }}>
-                        Stage Complete! 🎉
-                    </h2>
-                    <p style={{ fontSize: '18px', marginBottom: '24px' }}>{stage.title}</p>
+                    {stage.unlockedByDefault ? (
+                        <>
+                            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '26px', color: 'var(--green)', margin: '24px 0 8px' }}>
+                                Nice! You've completed a showcase simulation. 🎉
+                            </h2>
+                            <p style={{ fontSize: '16px', marginBottom: '24px', color: 'var(--muted)' }}>{stage.title} data explored.</p>
+                        </>
+                    ) : (
+                        <>
+                            <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '30px', color: 'var(--green)', margin: '24px 0 8px' }}>
+                                Stage Complete! 🎉
+                            </h2>
+                            <p style={{ fontSize: '18px', marginBottom: '24px' }}>{stage.title}</p>
+                        </>
+                    )}
+
                     <div className="pill active" style={{ fontSize: '16px', padding: '8px 20px', animation: 'popIn 0.4s ease 0.2s both' }}>
-                        +50 XP
+                        +50 Coins
                     </div>
 
-                    <button className="btn-primary" style={{ marginTop: 'auto' }} onClick={onComplete}>
+                    <button className="btn-primary" style={{ marginTop: 'auto', width: '100%' }} onClick={onComplete}>
                         Continue →
                     </button>
                 </div>
@@ -302,6 +326,9 @@ export default function StageGame({ stage, onComplete, onClose }) {
                         </div>
 
                         <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ marginBottom: '12px' }}>
+                                <AssetLogo symbol={stage.asset.symbol || (stage.realData && stage.realData.symbol)} size={40} />
+                            </div>
                             <h2 style={{ fontFamily: "'Syne', sans-serif", fontSize: '20px', margin: '0 0 8px 0' }}>{stage.asset.name}</h2>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 <span className="pill" style={{ letterSpacing: '1px', textTransform: 'uppercase', fontSize: '10px', padding: '4px 10px' }}>{stage.asset.type}</span>
@@ -318,21 +345,7 @@ export default function StageGame({ stage, onComplete, onClose }) {
                                 €{stage.asset.mockPrice.toFixed(2)}
                             </div>
 
-                            {/* Fake Sparkline representation with simple blocks since we can't easily draw SVG path purely in React without mapping correctly, but we will draw a quick custom inline SVG. */}
-                            <svg width="100%" height="60" viewBox="0 0 100 60" preserveAspectRatio="none">
-                                <polyline
-                                    fill="none"
-                                    stroke={stage.asset.riskLevel === 'low' ? 'var(--green)' : stage.asset.riskLevel === 'medium' ? 'var(--gold)' : 'var(--orange)'}
-                                    strokeWidth="3"
-                                    points={stage.asset.sparkline.map((val, i, arr) => {
-                                        const min = Math.min(...arr);
-                                        const max = Math.max(...arr);
-                                        const x = (i / (arr.length - 1)) * 100;
-                                        const y = 60 - (((val - min) / ((max - min) || 1)) * 50 + 5);
-                                        return `${x},${y}`;
-                                    }).join(' ')}
-                                />
-                            </svg>
+                            <PriceChart symbol={stage.asset.symbol || (stage.realData && stage.realData.symbol)} height={140} showLabels={true} animated={true} />
                         </div>
 
                         <div style={{ marginTop: '24px' }}>
@@ -407,7 +420,7 @@ export default function StageGame({ stage, onComplete, onClose }) {
                                     {decisionOutcome.outcome}
                                 </div>
                                 {decisionOutcome.pointBonus > 0 && (
-                                    <div style={{ fontWeight: 700, color: 'var(--green)' }}>+{decisionOutcome.pointBonus} bonus XP!</div>
+                                    <div style={{ fontWeight: 700, color: 'var(--green)' }}>+{decisionOutcome.pointBonus} bonus Coins!</div>
                                 )}
                             </div>
                         )}

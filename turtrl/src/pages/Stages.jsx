@@ -4,6 +4,7 @@ import BottomNav from '../components/BottomNav';
 import BottomSheet from '../components/BottomSheet';
 import StageGame from '../components/StageGame';
 import Mascot from '../components/Mascot';
+import AssetLogo from '../components/AssetLogo';
 import { getUser, updateUser, checkAndUpdateStreak } from '../utils/auth';
 import { STAGES } from '../utils/stagesData';
 import { useDevice } from '../utils/hooks';
@@ -35,7 +36,7 @@ export default function Stages() {
     const handleNodeClick = (stage) => {
         if (completedStageIds.includes(stage.id)) {
             setSheetContent({ type: 'completed', stage });
-        } else if (stage.id === currentStageId) {
+        } else if (stage.id === currentStageId || stage.unlockedByDefault) {
             setActiveStage(stage);
         } else {
             setSheetContent({ type: 'locked', stage });
@@ -96,7 +97,7 @@ export default function Stages() {
 
     const renderCompletedContent = () => (
         <div style={{ textAlign: 'center', padding: isDesktop ? '32px' : '10px 0', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div style={{ color: 'var(--green)', fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>+50 XP Earned</div>
+            <div style={{ color: 'var(--green)', fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>+50 Coins Earned</div>
 
             {sheetContent?.stage?.type === 'trade' && (
                 <div className="card" style={{ marginBottom: '24px', textAlign: 'left' }}>
@@ -111,7 +112,7 @@ export default function Stages() {
                 setSheetContent(null);
                 setActiveStage(s);
             }}>
-                Replay (No XP given)
+                Replay (No Coins given)
             </button>
         </div>
     );
@@ -191,7 +192,7 @@ export default function Stages() {
 
                 {chapters.map((chapter) => {
                     const chapterCompleted = chapter.stages.every(s => completedStageIds.includes(s.id));
-                    const chapterLocked = chapter.stages[0].id > currentStageId;
+                    const chapterLocked = chapter.stages[0].id > currentStageId && !chapter.stages[0].unlockedByDefault;
 
                     return (
                         <React.Fragment key={chapter.num}>
@@ -222,8 +223,9 @@ export default function Stages() {
                             <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '600px', gap: '20px' }}>
                                 {chapter.stages.map((stage, idx) => {
                                     const isCompleted = completedStageIds.includes(stage.id);
-                                    const isCurrent = stage.id === currentStageId;
-                                    const isLocked = stage.id > currentStageId;
+                                    const isShowcase = stage.unlockedByDefault;
+                                    const isCurrent = stage.id === currentStageId || (isShowcase && !isCompleted);
+                                    const isLocked = !isShowcase && stage.id > currentStageId;
                                     const isLeft = idx % 2 === 0;
                                     const isActiveDesktop = isDesktop && ((activeStage?.id === stage.id) || (sheetContent?.stage?.id === stage.id));
 
@@ -254,19 +256,19 @@ export default function Stages() {
                                             )}
 
                                             <div style={{
-                                                width: isDesktop ? '80px' : '64px',
-                                                height: isDesktop ? '80px' : '64px',
+                                                width: isDesktop ? (isShowcase ? '90px' : '80px') : (isShowcase ? '72px' : '64px'),
+                                                height: isDesktop ? (isShowcase ? '90px' : '80px') : (isShowcase ? '72px' : '64px'),
                                                 borderRadius: '50%',
                                                 background: isCompleted ? 'var(--green)' : isCurrent ? 'var(--gold)' : 'var(--card2)',
-                                                border: `3px solid ${isActiveDesktop ? '#fff' : isCompleted ? '#1a9e52' : isCurrent ? '#d4a822' : 'var(--border)'}`,
+                                                border: `3px solid ${isActiveDesktop ? '#fff' : isShowcase ? '#d4a822' : isCompleted ? '#1a9e52' : isCurrent ? '#d4a822' : 'var(--border)'}`,
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: isDesktop ? '36px' : '28px',
-                                                boxShadow: isActiveDesktop ? '0 0 0 4px rgba(255,255,255,0.2), 0 10px 30px rgba(0,0,0,0.5)' : isCurrent ? '0 10px 20px rgba(244,196,48,0.3)' : '0 8px 16px rgba(0,0,0,0.4)',
+                                                boxShadow: isActiveDesktop ? '0 0 0 4px rgba(255,255,255,0.2), 0 10px 30px rgba(0,0,0,0.5)' : isShowcase ? '0 0 20px rgba(244,196,48,0.5)' : isCurrent ? '0 10px 20px rgba(244,196,48,0.3)' : '0 8px 16px rgba(0,0,0,0.4)',
                                                 marginBottom: '8px',
                                                 zIndex: 2,
                                                 transition: 'all 0.2s'
                                             }}>
-                                                {isCompleted ? <span style={{ color: '#fff' }}>✓</span> : isLocked ? <span style={{ fontSize: '20px', filter: 'grayscale(1)' }}>🔒</span> : stage.icon}
+                                                {isCompleted ? <span style={{ color: '#fff' }}>✓</span> : isLocked ? <span style={{ fontSize: '20px', filter: 'grayscale(1)' }}>🔒</span> : (isShowcase ? <AssetLogo symbol={({ 1: 'EXIA.DE', 2: 'VOW3.DE', 3: 'SIE.DE', 4: 'SAP.DE', 5: 'ALV.DE' })[stage.id]} size={28} /> : stage.icon)}
                                             </div>
 
                                             {isCurrent && (
@@ -377,11 +379,11 @@ export default function Stages() {
                 </div>
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--muted)', marginBottom: '4px', fontWeight: 600 }}>
-                        <span>⭐ {user.points} XP</span>
+                        <span>⭐ {user.coins} Coins</span>
                         <span>Next level</span>
                     </div>
                     <div style={{ height: '6px', background: 'var(--card2)', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ width: `${(user.points % 500) / 500 * 100}%`, height: '100%', background: 'var(--green)', transition: 'width 0.3s ease' }}></div>
+                        <div style={{ width: `${(user.coins % 500) / 500 * 100}%`, height: '100%', background: 'var(--green)', transition: 'width 0.3s ease' }}></div>
                     </div>
                 </div>
             </div>

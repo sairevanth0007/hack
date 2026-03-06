@@ -5,6 +5,7 @@ import BottomNav from '../components/BottomNav';
 import Mascot from '../components/Mascot';
 import { getUser } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
+import AssetLogo from '../components/AssetLogo';
 
 export default function Analysis() {
     const { isDesktop } = useDevice();
@@ -81,7 +82,10 @@ export default function Analysis() {
                     return (
                         <div key={idx} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontWeight: 700 }}>{t.asset}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {t.symbol && <AssetLogo symbol={t.symbol} size={24} />}
+                                    <span style={{ fontWeight: 700 }}>{t.asset}</span>
+                                </div>
                                 <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
                                     {new Date(t.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                 </span>
@@ -180,12 +184,13 @@ export default function Analysis() {
                 <h3 className="section-title" style={{ padding: 0, margin: '0 0 16px 0' }}>This Week's Picks 🎯</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {[
-                        { a: 'MSCI World', t: 'ETF', r: 'Defensive play amid rate uncertainty', ret: '6-9%', risk: 'low' },
-                        { a: 'Bitcoin', t: 'Crypto', r: 'Momentum building post-halving period', ret: '-15 to +40%', risk: 'high' },
-                        { a: 'German Gov Bond', t: 'Bond', r: 'Safe haven with 4.2% guaranteed', ret: '4-4.5%', risk: 'low' }
+                        { symbol: 'VWCE.DE', a: 'MSCI World', t: 'ETF', r: 'Defensive play amid rate uncertainty', ret: '6-9%', risk: 'low' },
+                        { symbol: 'BTC-EUR', a: 'Bitcoin', t: 'Crypto', r: 'Momentum building post-halving period', ret: '-15 to +40%', risk: 'high' },
+                        { symbol: 'BUND-10Y', a: 'German Gov Bond', t: 'Bond', r: 'Safe haven with 4.2% guaranteed', ret: '4-4.5%', risk: 'low' }
                     ].map((rec, i) => (
                         <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <AssetLogo symbol={rec.symbol} size={28} />
                                 <span style={{ fontWeight: 700, fontSize: '15px' }}>{rec.a}</span>
                                 <span className="pill" style={{ fontSize: '10px', padding: '2px 8px' }}>{rec.t}</span>
                             </div>

@@ -72,9 +72,9 @@ export default function Profile() {
             </div>
             <div className="card" style={{ flex: 1, textAlign: 'center', padding: '16px 8px' }}>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '22px', fontWeight: 800, color: 'var(--green)' }}>
-                    {user.points} <span style={{ fontSize: '16px' }}>⭐</span>
+                    {user.coins} <span style={{ fontSize: '16px' }}>⭐</span>
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Total XP</div>
+                <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>Total Coins</div>
             </div>
         </div>
     );

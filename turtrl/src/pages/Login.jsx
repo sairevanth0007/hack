@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Mascot from '../components/Mascot';
 import { getUser, saveUser, isOnboarded } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
+import waveVideo from '../images/wave.webm';
 
 export default function Login() {
     const { isDesktop } = useDevice();
     const [activeTab, setActiveTab] = useState('login');
+    const [videoError, setVideoError] = useState(false);
 
     // Login State
     const [loginEmail, setLoginEmail] = useState('');
@@ -77,7 +79,8 @@ export default function Login() {
             currentStage: 1,
             completedStages: [],
             virtualBalance: 10000,
-            points: 0,
+            coins: 0,
+            coinsHistory: [],
             rubies: 0,
             streak: 0,
             bestStreak: 0,
@@ -265,24 +268,45 @@ export default function Login() {
     if (isDesktop) {
         return (
             <div style={desktopPageStyle}>
-                <div style={{ flex: 1, background: 'linear-gradient(135deg, #0f2d1a, #0D1117)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                    <Mascot size={200} animation="float" />
-                    <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '48px', color: 'var(--green)', margin: '32px 0 8px', fontWeight: 800 }}>
-                        Turtrl<span style={{ color: 'var(--gold)' }}>.</span>
-                    </h1>
-                    <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '18px', color: 'var(--muted)', margin: '0 0 48px', textAlign: 'center' }}>
-                        Your journey to €100K starts here
-                    </p>
+                <div style={{ flex: 1, position: 'relative', background: 'linear-gradient(135deg, #0f2d1a, #0D1117)', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                    {!videoError && (
+                        <video
+                            src={waveVideo}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            onError={() => setVideoError(true)}
+                            style={{
+                                position: 'absolute',
+                                inset: 0,
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                opacity: 0.4,
+                                zIndex: 0
+                            }}
+                        />
+                    )}
+                    <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Mascot size={200} animation="float" />
+                        <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '48px', color: 'var(--green)', margin: '32px 0 8px', fontWeight: 800 }}>
+                            Turtrl<span style={{ color: 'var(--gold)' }}>.</span>
+                        </h1>
+                        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '18px', color: 'var(--muted)', margin: '0 0 48px', textAlign: 'center' }}>
+                            Your journey to €100K starts here
+                        </p>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '16px', color: 'var(--text)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontSize: '20px' }}>✅</span> Learn investing step by step
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontSize: '20px' }}>✅</span> Practice with virtual money
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <span style={{ fontSize: '20px' }}>✅</span> Build your path to €100K
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '16px', color: 'var(--text)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '20px' }}>✅</span> Learn investing step by step
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '20px' }}>✅</span> Practice with virtual money
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ fontSize: '20px' }}>✅</span> Build your path to €100K
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -294,8 +318,30 @@ export default function Login() {
     }
 
     return (
-        <div className="page" style={mobilePageStyle}>
-            {loginContent}
+        <div className="page" style={{ ...mobilePageStyle, overflow: 'hidden', position: 'relative' }}>
+            {!isDesktop && !videoError && (
+                <video
+                    src={waveVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    onError={() => setVideoError(true)}
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: 0.15,
+                        zIndex: 0,
+                        pointerEvents: 'none'
+                    }}
+                />
+            )}
+            <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+                {loginContent}
+            </div>
         </div>
     );
 }

@@ -14,6 +14,10 @@ import Stages from './pages/Stages';
 import News from './pages/News';
 import Analysis from './pages/Analysis';
 import Profile from './pages/Profile';
+import StreakPage from './pages/StreakPage';
+import CoinsPage from './pages/CoinsPage';
+import ChainsPage from './pages/ChainsPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 import { isLoggedIn } from './utils/auth';
 
@@ -69,6 +73,10 @@ function AppLayout() {
                     <Route path="/news" element={<PrivateRoute><News /></PrivateRoute>} />
                     <Route path="/analysis" element={<PrivateRoute><Analysis /></PrivateRoute>} />
                     <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                    <Route path="/streak" element={<PrivateRoute><StreakPage /></PrivateRoute>} />
+                    <Route path="/coins" element={<PrivateRoute><CoinsPage /></PrivateRoute>} />
+                    <Route path="/chains" element={<PrivateRoute><ChainsPage /></PrivateRoute>} />
+                    <Route path="/leaderboard" element={<PrivateRoute><LeaderboardPage /></PrivateRoute>} />
 
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
