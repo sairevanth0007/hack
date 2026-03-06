@@ -3,12 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import Mascot from '../components/Mascot';
 import { getUser, saveUser, isOnboarded } from '../utils/auth';
 import { useDevice } from '../utils/hooks';
-import waveVideo from '../images/wave.webm';
 
 export default function Login() {
     const { isDesktop } = useDevice();
     const [activeTab, setActiveTab] = useState('login');
-    const [videoError, setVideoError] = useState(false);
 
     // Login State
     const [loginEmail, setLoginEmail] = useState('');
@@ -269,25 +267,6 @@ export default function Login() {
         return (
             <div style={desktopPageStyle}>
                 <div style={{ flex: 1, position: 'relative', background: 'linear-gradient(135deg, #0f2d1a, #0D1117)', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-                    {!videoError && (
-                        <video
-                            src={waveVideo}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            onError={() => setVideoError(true)}
-                            style={{
-                                position: 'absolute',
-                                inset: 0,
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                opacity: 0.4,
-                                zIndex: 0
-                            }}
-                        />
-                    )}
                     <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                         <Mascot size={200} animation="float" />
                         <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: '48px', color: 'var(--green)', margin: '32px 0 8px', fontWeight: 800 }}>
@@ -319,26 +298,6 @@ export default function Login() {
 
     return (
         <div className="page" style={{ ...mobilePageStyle, overflow: 'hidden', position: 'relative' }}>
-            {!isDesktop && !videoError && (
-                <video
-                    src={waveVideo}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    onError={() => setVideoError(true)}
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: 0.15,
-                        zIndex: 0,
-                        pointerEvents: 'none'
-                    }}
-                />
-            )}
             <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: '400px', margin: '0 auto' }}>
                 {loginContent}
             </div>
