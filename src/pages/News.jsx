@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TopNav from '../components/TopNav';
 import BottomNav from '../components/BottomNav';
 import Mascot from '../components/Mascot';
+import ConfettiEffect from '../components/ConfettiEffect';
 import { useNavigate } from 'react-router-dom';
 import { NEWS_ARTICLES } from '../utils/newsData';
 import { checkAndUpdateStreak, getUser, saveUser, awardCoins } from '../utils/auth';

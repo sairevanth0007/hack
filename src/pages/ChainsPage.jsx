@@ -73,7 +73,7 @@ export default function ChainsPage() {
                 <div style={{ marginBottom: '32px', width: '100%' }}>
                     <h3 className="section-title" style={{ marginBottom: '16px' }}>How to earn</h3>
                     <div className="card" style={{ padding: '16px', minHeight: '44px', width: '100%' }}>
-                        Maintain a perfect 60-day streak → earn 1 Chain
+                        Maintain a perfect 7 daystreak → earn 1 Chain
                     </div>
                 </div>
 

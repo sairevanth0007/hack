@@ -51,7 +51,7 @@ export default function FloatingAIChat() {
             if (lower.includes('invest')) {
                 response = "Based on your profile, I'd suggest starting with ETFs for stable growth. Complete the Mutual Funds chapter to learn more! 📊";
             } else if (lower.includes('ruby') || lower.includes('rubies')) {
-                response = "Rubies are earned by maintaining a perfect 60-day streak! You can use them to skip stages or protect your streak. 💎";
+                response = "Rubies are earned by maintaining a perfect 7 daystreak! You can use them to skip stages or protect your streak. 💎";
             } else if (lower.includes('compound')) {
                 response = "Compound interest means your returns earn returns. €10K at 7%/year becomes €19.6K in 10 years — without adding a cent! 🚀";
             } else if (lower.includes('stage')) {

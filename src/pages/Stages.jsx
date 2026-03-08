@@ -178,7 +178,7 @@ export default function Stages() {
                     </div>
                 ) : (
                     <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>
-                        Earn rubies by maintaining a perfect 60-day streak to skip stages.
+                        Earn rubies by maintaining a perfect 7 daystreak to skip stages.
                     </p>
                 )}
             </div>
