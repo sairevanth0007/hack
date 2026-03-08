@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import PhoneFrame from './components/PhoneFrame';
 import LoadingScreen from './components/LoadingScreen';
@@ -28,9 +28,9 @@ function PrivateRoute({ children }) {
 
 export default function App() {
     return (
-        <BrowserRouter>
+        <HashRouter>
             <AppLayout />
-        </BrowserRouter>
+        </HashRouter>
     );
 }
 

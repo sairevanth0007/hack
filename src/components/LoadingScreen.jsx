@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Mascot from './Mascot';
+import loadingImg from '../images/4. Turtle on road.png';
 
 export default function LoadingScreen({ onComplete }) {
     const [progress, setProgress] = useState(0);
@@ -36,7 +36,15 @@ export default function LoadingScreen({ onComplete }) {
             alignItems: 'center',
             justifyContent: 'center'
         }}>
-            <Mascot size={160} animation="pulse" />
+            <img
+                src={loadingImg}
+                alt="Turtrl Loading"
+                style={{
+                    width: 240,
+                    height: 'auto',
+                    animation: 'pulse 3s infinite ease-in-out'
+                }}
+            />
 
             <h1 style={{
                 fontFamily: "'Syne', sans-serif",
